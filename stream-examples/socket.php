@@ -2,8 +2,8 @@
 
 use Ardent\Streams\Events,
     Ardent\Streams\Memory,
-    Ardent\Streams\Tcp,
-    Ardent\Streams\TcpSsl,
+    Ardent\Streams\Socket,
+    Ardent\Streams\SslSocket,
     Ardent\Streams\StreamException;
 
 spl_autoload_register(function($class) {
@@ -17,7 +17,7 @@ spl_autoload_register(function($class) {
 
 /**
  * A custom filter to prevent output of the response entity body. If not attached to the
- * Tcp stream instance the full entity will be output.
+ * Socket stream instance the full entity will be output.
  */
 class HeadersOnlyBuffer {
     private $buffer;
@@ -50,15 +50,16 @@ class HeadersOnlyBuffer {
 $request = '' .
     "GET / HTTP/1.1\r\n" .
     "Host: www.google.com\r\n" .
+    "User-Agent: test\r\n" .
     "Connection: close\r\n\r\n";
 
 $headersOnlyBuffer = new HeadersOnlyBuffer;
-$stream = (new Tcp('tcp://www.google.com:80'))->filter($headersOnlyBuffer);
+$stream = (new Socket('tcp://www.google.com:80'))->filter($headersOnlyBuffer);
 $sink = new Memory;
 
 $stream->subscribe([
     Events::READY => function() use ($stream, $request) {
-        $written = $stream->add($request);
+        $stream->add($request);
     },
     Events::DATA => function($data) use ($sink){
         $sink->add($data);

@@ -2,7 +2,7 @@
 
 namespace Ardent\Streams;
 
-class TcpSsl extends Tcp {
+class SslSocket extends Socket {
     
     const CONN_PENDING_CRYPTO = 110;
     
@@ -24,7 +24,7 @@ class TcpSsl extends Tcp {
     }
     
     public function current() {
-        $buffer = $this->getBuffer();
+        $buffer = $this->getCurrentCache();
         if (null !== $buffer) {
             return $buffer;
         }

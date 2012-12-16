@@ -2,7 +2,7 @@
 
 namespace Ardent\Streams;
 
-class Tcp extends Stream {
+class Socket extends Stream {
     
     const CONN_NONE = 0;
     const CONN_PENDING = 100;
@@ -11,7 +11,7 @@ class Tcp extends Stream {
     private $uri;
     private $persistent = FALSE;
     private $granularity = 8192;
-    private $buffer;
+    private $currentCache;
     
     protected $socket;
     protected $state = self::CONN_NONE;
@@ -56,8 +56,8 @@ class Tcp extends Stream {
      * @return mixed Current data or NULL on failure
      */
     public function current() {
-        if (NULL !== $this->buffer) {
-            return $this->buffer;
+        if (NULL !== $this->currentCache) {
+            return $this->currentCache;
         }
         
         switch ($this->state) {
@@ -88,6 +88,8 @@ class Tcp extends Stream {
     protected function connect() {
         list($socket, $errNo, $errStr) = $this->makeSocketStream();
         
+        // A SOCKET_EWOULDBLOCK error means the socket is trying really hard to connect and that
+        // we should continue on as if the connection was successful
         if (FALSE !== $socket || $errNo === SOCKET_EWOULDBLOCK) {
             $this->state = self::CONN_PENDING;
             $this->socket = $socket;
@@ -129,7 +131,7 @@ class Tcp extends Stream {
         $data = @fread($this->socket, $this->granularity);
         
         if (!(FALSE === $data || $data === '')) {
-            $this->buffer = $data;
+            $this->currentCache = $data;
             return $data;
         } elseif (!is_resource($this->socket) || feof($this->socket)) {
             $this->notify(Events::ERROR, new StreamException(
@@ -164,12 +166,13 @@ class Tcp extends Stream {
      * @return void
      */
     public function next() {
-        $this->buffer = NULL;
+        $this->currentCache = NULL;
     }
     
     /**
      * Rewind has no applicability for socket streams but must be included for
      * the stream to function as an Iterator
+     * 
      * @link http://php.net/manual/en/iterator.rewind.php
      * @return void
      */
@@ -189,10 +192,6 @@ class Tcp extends Stream {
         return !$isEof;
     }
     
-    protected function isAlive() {
-        return (is_resource($this->socket) && !@feof($this->socket));
-    }
-    
     protected function doSelect($read, $write, $ex, $tvsec, $tvusec) {
         return @stream_select($read, $write, $ex, $tvsec, $tvusec);
     }
@@ -201,19 +200,35 @@ class Tcp extends Stream {
         @fclose($this->socket);
     }
     
+    /**
+     * Add data to the socket sink
+     * 
+     * @param string $data
+     * @return int Returns the number of bytes written to the socket
+     */
     public function add($data) {
         if (empty($data) && $data !== '0') {
             return 0;
         }
         
-        if (FALSE === ($bytes = @fwrite($this->socket, $data))) {
-            $errorInfo = error_get_last();
-            $this->notify(Events::ERROR, new StreamException(
-                'Socket write failure: ' . $errorInfo['message']
-            ));
+        $bytesToWrite = strlen($data);
+        $bytesWritten = 0;
+        
+        while ($bytesWritten < $bytesToWrite) {
+            $bytes = @fwrite($this->socket, $data);
+            
+            if (FALSE === $bytes) {
+                $errorInfo = error_get_last();
+                $this->notify(Events::ERROR, new StreamException(
+                    'Socket write failure: ' . $errorInfo['message']
+                ));
+                break;
+            } else {
+                $bytesWritten += $bytes;
+            }
         }
         
-        return $bytes;
+        return $bytesWritten;
     }
     
     public function setGranularity($bytes) {
@@ -227,7 +242,7 @@ class Tcp extends Stream {
         return $this;
     }
     
-    protected function getBuffer() {
-        return $this->buffer;
+    protected function getCurrentCache() {
+        return $this->currentCache;
     }
 }
