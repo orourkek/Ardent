@@ -2,25 +2,12 @@
 
 namespace Ardent;
 
-class HashSetIterator implements SetIterator {
+class HashMapIterator implements MapIterator {
 
-    /**
-     * @var array
-     */
-    private $objects;
+    protected $storage = array();
 
-    /**
-     * @var int
-     */
-    private $key = 0;
-
-    function  __construct(array $set) {
-        $this->objects = $set;
-        $this->rewind();
-    }
-
-    function count() {
-        return count($this->objects);
+    function __construct(array $storage) {
+        $this->storage = $storage;
     }
 
     /**
@@ -28,8 +15,7 @@ class HashSetIterator implements SetIterator {
      * @return void
      */
     function rewind() {
-        reset($this->objects);
-        $this->key = 0;
+        reset($this->storage);
     }
 
     /**
@@ -37,20 +23,23 @@ class HashSetIterator implements SetIterator {
      * @return boolean
      */
     function valid() {
-        return key($this->objects) !== NULL;
+        return key($this->storage) !== NULL;
     }
 
     /**
      * @link http://php.net/manual/en/iterator.key.php
-     * @return string
+     * @return mixed
      */
     function key() {
         if (!$this->valid()) {
             return NULL;
         }
-        return $this->key;
+        /**
+         * @var Pair $pair
+         */
+        $pair = current($this->storage);
+        return $pair->first;
     }
-
     /**
      * @link http://php.net/manual/en/iterator.current.php
      * @return mixed
@@ -59,7 +48,11 @@ class HashSetIterator implements SetIterator {
         if (!$this->valid()) {
             return NULL;
         }
-        return current($this->objects);
+        /**
+         * @var Pair $pair
+         */
+        $pair = current($this->storage);
+        return $pair->second;
     }
 
     /**
@@ -67,8 +60,15 @@ class HashSetIterator implements SetIterator {
      * @return void
      */
     function next() {
-        next($this->objects);
-        $this->key++;
+        next($this->storage);
+    }
+
+    /**
+     * @link http://php.net/manual/en/countable.count.php
+     * @return int
+     */
+    function count() {
+        return count($this->storage);
     }
 
 }
