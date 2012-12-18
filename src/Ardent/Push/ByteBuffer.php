@@ -1,6 +1,6 @@
 <?php
 
-namespace Ardent\Streams;
+namespace Ardent\Push;
 
 class ByteBuffer extends Filter {
 

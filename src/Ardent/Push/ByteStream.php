@@ -1,6 +1,6 @@
 <?php
 
-namespace Ardent\Streams;
+namespace Ardent\Push;
 
 /**
  * Streams are Iterators with the additional property of "observability"

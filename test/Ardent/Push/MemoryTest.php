@@ -1,6 +1,6 @@
 <?php
 
-use Ardent\Streams\Memory;
+use Ardent\Push\Memory;
 
 class MemoryTest extends PHPUnit_Framework_TestCase {
     
@@ -17,7 +17,7 @@ class MemoryTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testCountReturnsZeroOnKeyError() {
-        $stream = $this->getMock('Ardent\\Streams\\Memory', array('key'));
+        $stream = $this->getMock('Ardent\\Push\\Memory', array('key'));
         $stream->add('Cake or death?!?!?!11');
         $stream->expects($this->once())
                ->method('key')
@@ -27,7 +27,7 @@ class MemoryTest extends PHPUnit_Framework_TestCase {
     }
     
     public function testCountReturnsZeroOnSeekError() {
-        $stream = $this->getMock('Ardent\\Streams\\Memory', array('seek'));
+        $stream = $this->getMock('Ardent\\Push\\Memory', array('seek'));
         $stream->add('Cake or death?!?!?!11');
         $stream->expects($this->once())
                ->method('seek')

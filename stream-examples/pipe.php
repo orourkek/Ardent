@@ -1,8 +1,8 @@
 <?php
 
-use Ardent\Streams\StdOut,
-    Ardent\Streams\StdErr,
-    Ardent\Streams\Sequence;
+use Ardent\Push\StdOut,
+    Ardent\Push\StdErr,
+    Ardent\Push\Sequence;
 
 spl_autoload_register(function($class) {
     if (0 === strpos($class, 'Ardent\\')) {

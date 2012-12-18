@@ -1,6 +1,6 @@
 <?php
 
-namespace Ardent\Streams;
+namespace Ardent\Push;
 
 class Socket extends Stream implements ByteStream {
     

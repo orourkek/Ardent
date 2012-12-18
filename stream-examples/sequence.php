@@ -1,7 +1,7 @@
 <?php
 
-use Ardent\Streams\Events,
-    Ardent\Streams\Sequence;
+use Ardent\Push\Events,
+    Ardent\Push\Sequence;
 
 spl_autoload_register(function($class) {
     if (0 === strpos($class, 'Ardent\\')) {

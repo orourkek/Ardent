@@ -1,6 +1,6 @@
 <?php
 
-use Ardent\Streams\String;
+use Ardent\Push\String;
 
 spl_autoload_register(function($class) {
     if (0 === strpos($class, 'Ardent\\')) {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Ardent\Streams;
+namespace Ardent\Push;
 
 class Events {
     const READY = 100;

@@ -1,6 +1,6 @@
 <?php
 
-use Ardent\Streams\Temp;
+use Ardent\Push\Temp;
 
 class TempTest extends PHPUnit_Framework_TestCase {
     

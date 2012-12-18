@@ -1,6 +1,6 @@
 <?php
 
-namespace Ardent\Streams;
+namespace Ardent\Push;
 
 /**
  * An alternative to SplObserver introducing the expectation that Observables may broadcast any

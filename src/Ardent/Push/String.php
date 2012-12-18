@@ -1,6 +1,6 @@
 <?php
 
-namespace Ardent\Streams;
+namespace Ardent\Push;
 
 /**
  * A non-blocking, byte-based, in-memory stream of characters with variable data granularity

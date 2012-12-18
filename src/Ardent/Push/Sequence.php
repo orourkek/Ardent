@@ -1,6 +1,6 @@
 <?php
 
-namespace Ardent\Streams;
+namespace Ardent\Push;
 
 /**
  * A generic, non-byte-based stream allowing stream/sink behavior for various data types.

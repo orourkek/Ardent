@@ -1,6 +1,6 @@
 <?php
 
-use Ardent\Streams\String;
+use Ardent\Push\String;
 
 class StringTest extends PHPUnit_Framework_TestCase {
     

@@ -1,6 +1,6 @@
 <?php
 
-use Ardent\Streams\Memory;
+use Ardent\Push\Memory;
 
 class StreamTest extends PHPUnit_Framework_TestCase {
     

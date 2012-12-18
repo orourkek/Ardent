@@ -1,10 +1,10 @@
 <?php
 
-use Ardent\Streams\Events,
-    Ardent\Streams\Sequence,
-    Ardent\Streams\Memory,
-    Ardent\Streams\ByteBuffer,
-    Ardent\Streams\StreamException;
+use Ardent\Push\Events,
+    Ardent\Push\Sequence,
+    Ardent\Push\Memory,
+    Ardent\Push\ByteBuffer,
+    Ardent\Push\StreamException;
 
 spl_autoload_register(function($class) {
     if (0 === strpos($class, 'Ardent\\')) {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Ardent\Streams;
+namespace Ardent\Push;
 
 abstract class Stream extends Subject implements Streamable, Sink {
     
