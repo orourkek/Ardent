@@ -5,7 +5,7 @@ namespace Ardent\Streams;
 /**
  * A non-blocking, byte-based, filesystem stream with variable data granularity
  */
-class File extends Stream implements \Ardent\CountableSeekableIterator {
+class File extends Stream implements \Ardent\CountableSeekableIterator, ByteStream {
     
     private $uri;
     private $mode = 'ab+';
@@ -22,6 +22,10 @@ class File extends Stream implements \Ardent\CountableSeekableIterator {
     
     public function __destruct() {
         $this->close();
+    }
+    
+    public function getResource() {
+        return $this->resource;
     }
     
     /**
@@ -224,6 +228,6 @@ class File extends Stream implements \Ardent\CountableSeekableIterator {
      * @return string
      */
     public function __toString() {
-        return stream_get_contents($this->resource);
+        return is_resource($this->resource) ? stream_get_contents($this->resource) : '';
     }
 }

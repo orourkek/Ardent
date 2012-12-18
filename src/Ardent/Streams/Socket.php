@@ -2,7 +2,7 @@
 
 namespace Ardent\Streams;
 
-class Socket extends Stream {
+class Socket extends Stream implements ByteStream {
     
     const CONN_NONE = 0;
     const CONN_PENDING = 100;
@@ -50,7 +50,15 @@ class Socket extends Stream {
     public function __toString() {
         return $this->uri;
     }
-
+    
+    public function getResource() {
+        return $this->socket;
+    }
+    
+    public function getState() {
+        return $this->state;
+    }
+    
     /**
      * @link http://php.net/manual/en/iterator.current.php
      * @return mixed Current data or NULL on failure
@@ -65,8 +73,8 @@ class Socket extends Stream {
                 $this->connect();
                 break;
             case self::CONN_PENDING:
-                $read = $ex = array();
                 $write = array($this->socket);
+                $read = $ex = NULL;
                 if ($this->doSelect($read, $write, $ex, 0, 0)) {
                     $this->state = self::CONN_READY;
                     $this->notify(Events::READY);
@@ -74,8 +82,12 @@ class Socket extends Stream {
                 break;
             case self::CONN_READY:
                 $read = array($this->socket);
-                $write = $ex = array();
-                if ($this->doSelect($read, $write, $ex, 0, 0) && ($data = $this->read())) {
+                $write = $ex = NULL;
+                if (!$this->doSelect($read, $write, $ex, 0, 0)) {
+                    break;
+                }
+                $data = $this->read();
+                if ($data || $data === '0') {
                     $this->notify(Events::DATA, $data);
                     return $data;
                 }
@@ -133,9 +145,9 @@ class Socket extends Stream {
         if (!(FALSE === $data || $data === '')) {
             $this->currentCache = $data;
             return $data;
-        } elseif (!is_resource($this->socket) || feof($this->socket)) {
+        } elseif (!is_resource($this->socket) || @feof($this->socket)) {
             $this->notify(Events::ERROR, new StreamException(
-                'Socket has gone away :('
+                'Socket has gone away'
             ));
         }
         
@@ -201,34 +213,46 @@ class Socket extends Stream {
     }
     
     /**
-     * Add data to the socket sink
+     * Write data to the socket sink
      * 
      * @param string $data
+     * @param bool $block
      * @return int Returns the number of bytes written to the socket
      */
-    public function add($data) {
+    public function add($data, $block = FALSE) {
         if (empty($data) && $data !== '0') {
             return 0;
+        } elseif (!$block) {
+            return $this->doSockWrite($data);
         }
         
         $bytesToWrite = strlen($data);
         $bytesWritten = 0;
         
         while ($bytesWritten < $bytesToWrite) {
-            $bytes = @fwrite($this->socket, $data);
-            
-            if (FALSE === $bytes) {
-                $errorInfo = error_get_last();
-                $this->notify(Events::ERROR, new StreamException(
-                    'Socket write failure: ' . $errorInfo['message']
-                ));
-                break;
-            } else {
+            if ($bytes = $this->doSockWrite(substr($data, $bytesWritten))) {
                 $bytesWritten += $bytes;
+            } else {
+                break;
             }
         }
         
         return $bytesWritten;
+    }
+    
+    private function doSockWrite($data) {
+        $bytes = @fwrite($this->socket, $data);
+        
+        if (FALSE === $bytes) {
+            $errorInfo = error_get_last();
+            $this->notify(Events::ERROR, new StreamException(
+                'Socket write failure: ' . $errorInfo['message']
+            ));
+            
+            return 0;
+        } else {
+            return $bytes;
+        }
     }
     
     public function setGranularity($bytes) {

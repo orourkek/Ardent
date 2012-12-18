@@ -28,7 +28,7 @@ interface Streamable extends \Iterator, Observable {
     function pipe(Sink $sink);
     
     /**
-     * Iterate over the Stream as long as it is valid
+     * Iterate over the Stream while it's valid
      */
     function loop();
 }
