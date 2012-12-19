@@ -1,14 +1,15 @@
 <?php
 
 use Ardent\Push\Buffer, 
-    Ardent\Push\Memory;
+    Ardent\Push\Memory,
+    Ardent\Push\Filterable;
 
 class BufferTest extends PHPUnit_Framework_TestCase {
     
     public function testBuffer() {
         $stream = new Memory();
         $buffer = new Buffer(3);
-        $stream->filter($buffer);
+        $stream->filter($buffer, Filterable::FILTER_OUT);
         
         $stream->add('test');
         $stream->rewind();

@@ -1,6 +1,7 @@
 <?php
 
-use Ardent\Push\Memory;
+use Ardent\Push\Memory,
+    Ardent\Push\Filterable;
 
 class FilterTest extends PHPUnit_Framework_TestCase {
     
@@ -9,12 +10,12 @@ class FilterTest extends PHPUnit_Framework_TestCase {
      */
     public function testFilterThrowsExceptionOnInvalidCallback() {
         $stream = new Memory();
-        $stream->filter('42 is definitely not callable');
+        $stream->filter('42 is definitely not callable', Filterable::FILTER_OUT);
     }
     
     public function testFilter() {
         $stream = new Memory();
-        $stream->filter('strtoupper');
+        $stream->filter('strtoupper', Filterable::FILTER_OUT);
         
         $content = 'The cake is a lie';
         $stream->add($content);
