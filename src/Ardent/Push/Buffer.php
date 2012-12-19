@@ -2,7 +2,7 @@
 
 namespace Ardent\Push;
 
-class ByteBuffer extends Filter {
+class Buffer extends Filter {
 
     private $buffer;
     private $minBroadcastSize;
