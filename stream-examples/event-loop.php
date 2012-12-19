@@ -52,7 +52,6 @@ $streams = [
 
 $googSock->subscribe([
     Observable::READY => function() use ($googSock) {
-        var_dump(stream_socket_get_name($googSock->getResource(), TRUE));die;
         $googSock->add('' .
             "GET / HTTP/1.1\r\n" .
             "Host: www.google.com\r\n" .

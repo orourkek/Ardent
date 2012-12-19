@@ -98,7 +98,7 @@ class Server extends Subject {
             if ($this->isNewConnectionAllowed()) {
                 $read = array($this->socket);
                 $write = $ex = NULL;
-                if (stream_select($read, $write, $ex, 0, $tvusec)) {
+                if (@stream_select($read, $write, $ex, 0, $tvusec)) {
                     $this->accept();
                 }
             }
@@ -107,7 +107,7 @@ class Server extends Subject {
             $ex = NULL;
             
             if ($read) {
-                if (stream_select($read, $write, $ex, 0, $tvusec)) {
+                if (@stream_select($read, $write, $ex, 0, $tvusec)) {
                     $this->accept();
                 }
                 

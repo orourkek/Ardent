@@ -3,17 +3,9 @@
 namespace Ardent\Push;
 
 /**
- * Streams are Iterators with the additional property of "observability"
+ * Streams are Iterators with the additional property of "observability" and "filterability"
  */
-interface Streamable extends \Iterator, Observable {
-    
-    /**
-     * Attach a filter to all data read from the stream
-     * 
-     * @param callable $callback
-     * @return void
-     */
-    function filter($callback);
+interface Streamable extends \Iterator, Observable, Filterable {
     
     /**
      * Attach a sink to which all future data events will be piped

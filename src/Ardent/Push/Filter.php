@@ -2,24 +2,43 @@
 
 namespace Ardent\Push;
 
-abstract class Filter {
+abstract class Filter implements Filterable {
     
-    private $filters = array();
+    private $inputFilters = array();
+    private $outputFilters = array();
     
-    final public function filter($callback) {
-        if (is_callable($callback)) {
-            $this->filters[] = $callback;
-        } else {
+    final public function filter($callback, $mode) {
+        if (!($mode == self::FILTER_IN || $mode == self::FILTER_OUT || $mode == self::FILTER_ALL)) {
+            throw new \Ardent\DomainException(
+                'Invalid filter mode'
+            );
+        } elseif (!is_callable($callback)) {
             throw new \Ardent\FunctionException(
                 'Invalid filter callback'
             );
         }
         
+        if ($mode == self::FILTER_IN || $mode == self::FILTER_ALL) {
+            $this->inputFilters[] = $callback;
+        }
+        
+        if ($mode == self::FILTER_OUT || $mode == self::FILTER_ALL) {
+            $this->outputFilters[] = $callback;
+        }
+        
         return $this;
     }
     
-    final protected function applyFilters($data) {
-        foreach ($this->filters as $transformation) {
+    final protected function applyInputFilters($data) {
+        foreach ($this->inputFilters as $transformation) {
+            $data = $transformation($data);
+        }
+        
+        return $data;
+    }
+    
+    final protected function applyOutputFilters($data) {
+        foreach ($this->outputFilters as $transformation) {
             $data = $transformation($data);
         }
         

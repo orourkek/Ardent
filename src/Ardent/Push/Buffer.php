@@ -12,10 +12,11 @@ class Buffer extends Filter {
     }
     
     public function __invoke($data) {
+        $data = $this->applyInputFilters($data);
         $this->buffer .= $data;
         
         if (strlen($this->buffer) >= $this->minBroadcastSize) {
-            $return = $this->applyFilters($this->buffer);
+            $return = $this->applyOutputFilters($this->buffer);
             $this->buffer = NULL;
         } else {
             $return = NULL;
@@ -28,7 +29,7 @@ class Buffer extends Filter {
         if (NULL === $this->buffer) {
             return $this->buffer;
         } else {
-            $return = $this->applyFilters($this->buffer);
+            $return = $this->applyOutputFilters($this->buffer);
             $this->buffer = NULL;
             
             return $return;

@@ -24,7 +24,7 @@ $server->subscribe([
             "Connection: close\r\n" .
             "Content-Length: 13\r\n" .
             "\r\n" .
-            "Hello, World."
+            "Hello, World.", TRUE
         );
         $stream->close();
     }

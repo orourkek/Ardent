@@ -86,10 +86,6 @@ class Socket extends Stream {
         $this->notify(Observable::CLOSE);
     }
     
-    public function getResource() {
-        return $this->socket;
-    }
-    
     /**
      * @link http://php.net/manual/en/iterator.current.php
      * @return mixed Current data or NULL on failure
@@ -117,10 +113,10 @@ class Socket extends Stream {
                 if (!$this->doSelect($read, $write, $ex, 0, 0)) {
                     break;
                 }
+                
                 $data = $this->read();
                 
                 if ($data || $data === '0') {
-                    $data = $this->applyFilters($data);
                     $this->currentCache = $data;
                     $this->notify(Observable::DATA, $data);
                     
@@ -171,6 +167,7 @@ class Socket extends Stream {
         $data = @fread($this->socket, $this->granularity);
         
         if (!(FALSE === $data || $data === '')) {
+            $data = $this->applyOutputFilters($data);
             return $data;
         } elseif (!is_resource($this->socket) || @feof($this->socket)) {
             $this->notify(Observable::ERROR, new StreamException(
@@ -245,7 +242,11 @@ class Socket extends Stream {
     public function add($data, $block = FALSE) {
         if (empty($data) && $data !== '0') {
             return 0;
-        } elseif (!$block) {
+        }
+        
+        $data = $this->applyInputFilters($data);
+        
+        if (!$block) {
             return $this->doSockWrite($data);
         }
         

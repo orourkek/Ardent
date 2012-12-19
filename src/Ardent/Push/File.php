@@ -24,10 +24,6 @@ class File extends Stream implements \Ardent\CountableSeekableIterator {
         $this->close();
     }
     
-    public function getResource() {
-        return $this->resource;
-    }
-    
     /**
      * @link http://php.net/manual/en/countable.count.php
      * @return int Returns the total size in bytes of the stream or ZERO on failure
@@ -156,7 +152,7 @@ class File extends Stream implements \Ardent\CountableSeekableIterator {
             ));
             return NULL;
         } elseif ($data !== '') {
-            $data = $this->applyFilters($data);
+            $data = $this->applyOutputFilters($data);
             $this->notify(Observable::DATA, $data);
             return $data;
         } else {
@@ -172,6 +168,8 @@ class File extends Stream implements \Ardent\CountableSeekableIterator {
         if (!$this->resource) {
             $this->initialize();
         }
+        
+        $data = $this->applyInputFilters($data);
         
         $bytes = @fwrite($this->resource, $data);
         
