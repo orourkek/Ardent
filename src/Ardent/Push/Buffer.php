@@ -25,7 +25,18 @@ class Buffer {
         return $return;
     }
     
-    final public function filter($callback) {
+    public function flush() {
+        if (NULL === $this->buffer) {
+            return $this->buffer;
+        } else {
+            $return = $this->applyFilters($this->buffer);
+            $this->buffer = NULL;
+            
+            return $return;
+        }
+    }
+    
+    public function filter($callback) {
         if (!is_callable($callback)) {
             throw new \Ardent\FunctionException(
                 'Invalid filter callback'
@@ -37,22 +48,11 @@ class Buffer {
         return $this;
     }
     
-    final protected function applyFilters($data) {
+    protected function applyFilters($data) {
         foreach ($this->filters as $transformation) {
             $data = $transformation($data);
         }
         
         return $data;
-    }
-    
-    public function flush() {
-        if (NULL === $this->buffer) {
-            return $this->buffer;
-        } else {
-            $return = $this->applyFilters($this->buffer);
-            $this->buffer = NULL;
-            
-            return $return;
-        }
     }
 }

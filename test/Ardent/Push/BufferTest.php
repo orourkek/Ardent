@@ -26,4 +26,19 @@ class BufferTest extends PHPUnit_Framework_TestCase {
         $stream->current();
         $this->assertEquals('t', $buffer->flush());
     }
+    
+    /**
+     * @expectedException Ardent\FunctionException
+     */
+    public function testFilterThrowsExceptionOnInvalidCallable() {
+        $buffer = new Buffer(42);
+        $buffer->filter('42 is not callable');
+    }
+    
+    public function testFilter() {
+        $buffer = new Buffer(1);
+        $buffer->filter('strtoupper');
+        
+        $this->assertEquals('A', $buffer('a'));
+    }
 }

@@ -19,9 +19,19 @@ class MemoryTest extends PHPUnit_Framework_TestCase {
     public function testCountReturnsZeroOnKeyError() {
         $stream = $this->getMock('Ardent\\Push\\Memory', array('key'));
         $stream->add('Cake or death?!?!?!11');
-        $stream->expects($this->once())
+        $stream->expects($this->at(0))
                ->method('key')
-               ->will($this->returnValue(null));
+               ->will($this->returnValue(NULL));
+        
+        $this->assertEquals(0, $stream->count());
+        
+        $stream->expects($this->at(0))
+               ->method('key')
+               ->will($this->returnValue(42));
+        
+        $stream->expects($this->at(1))
+               ->method('key')
+               ->will($this->returnValue(NULL));
         
         $this->assertEquals(0, $stream->count());
     }
@@ -29,10 +39,19 @@ class MemoryTest extends PHPUnit_Framework_TestCase {
     public function testCountReturnsZeroOnSeekError() {
         $stream = $this->getMock('Ardent\\Push\\Memory', array('seek'));
         $stream->add('Cake or death?!?!?!11');
-        $stream->expects($this->once())
+        $stream->expects($this->at(0))
                ->method('seek')
-               ->will($this->returnValue(false));
+               ->will($this->returnValue(FALSE));
         
+        $this->assertEquals(0, $stream->count());
+        
+        $stream->expects($this->at(0))
+               ->method('seek')
+               ->will($this->returnValue(TRUE));
+        
+        $stream->expects($this->at(1))
+               ->method('seek')
+               ->will($this->returnValue(FALSE));
         $this->assertEquals(0, $stream->count());
     }
     

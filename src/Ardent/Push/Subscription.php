@@ -28,7 +28,7 @@ class Subscription {
      */
     public function __construct(Observable $subject, array $callbacks, $unsubscribeOnError = true) {
         $this->subject = $subject;
-        $this->assignAllHandlers($callbacks);
+        $this->assignHandlers($callbacks);
         $this->unsubscribeOnError = filter_var($unsubscribeOnError, FILTER_VALIDATE_BOOLEAN);
     }
     
@@ -38,12 +38,13 @@ class Subscription {
      * @throws \Ardent\FunctionException On invalid listener callback(s)
      * @return void
      */
-    public function assignAllHandlers(array $callbacks) {
+    private function assignHandlers(array $callbacks) {
         if (empty($callbacks)) {
             throw new \Ardent\EmptyException(
                 'No subscription listeners specified'
             );
         }
+        
         foreach ($callbacks as $event => $callback) {
             if (is_callable($callback)) {
                 $this->callbacks[$event] = $callback;

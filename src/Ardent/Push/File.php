@@ -11,7 +11,6 @@ class File extends StreamSink implements \Ardent\CountableSeekableIterator {
     private $mode = 'ab+';
     private $resource;
     private $granularity = 8192;
-    
     private $currentCache = NULL;
     private $keyCache = NULL;
     
@@ -51,23 +50,27 @@ class File extends StreamSink implements \Ardent\CountableSeekableIterator {
     }
 
     /**
-     * Note that the return type differs from the normal SeekableIterator interface
+     * Note that this method returns bool where the default SeekableIterator returns NULL
+     * 
      * @link http://php.net/manual/en/seekableiterator.seek.php
      * @param int $position
      * @param int $whence
      * @return bool Returns TRUE on success or FALSE on failure
      */
     public function seek($position, $whence = SEEK_SET) {
-        if (0 === @fseek($this->resource, $position, $whence)) {
-            return TRUE;
-        } else {
+        if (!$this->resource) {
+            $this->initialize();
+        }
+        
+        if (0 !== @fseek($this->resource, $position, $whence)) {
             $errorInfo = error_get_last();
             $this->notify(Observable::ERROR, new StreamException(
                 'Stream seek failure: ' . $errorInfo['message']
             ));
-            
             return FALSE;
         }
+        
+        return TRUE;
     }
 
     /**
@@ -75,6 +78,10 @@ class File extends StreamSink implements \Ardent\CountableSeekableIterator {
      * @return void
      */
     public function rewind() {
+        if (!$this->resource) {
+            $this->initialize();
+        }
+        
         if (!@rewind($this->resource)) {
             $errorInfo = error_get_last();
             $e = new StreamException(
@@ -100,6 +107,8 @@ class File extends StreamSink implements \Ardent\CountableSeekableIterator {
     public function key() {
         if ($this->keyCache !== NULL) {
             return $this->keyCache;
+        } elseif (!$this->resource) {
+            $this->initialize();
         }
 
         $position = @ftell($this->resource);
@@ -126,10 +135,9 @@ class File extends StreamSink implements \Ardent\CountableSeekableIterator {
             return $this->currentCache;
         } elseif ($this->resource) {
             return $this->currentCache = $this->read();
-        } elseif ($this->initialize()) {
-            return $this->currentCache = $this->read();
         } else {
-            return NULL;
+            $this->initialize();
+            return $this->currentCache = $this->read();
         }
     }
 
@@ -181,6 +189,9 @@ class File extends StreamSink implements \Ardent\CountableSeekableIterator {
         return $bytes;
     }
     
+    /**
+     * Method carries protected visibility specifically for test mocking -- do not privatize!
+     */
     protected function initialize() {
         if ($this->resource = @fopen($this->uri, $this->mode)) {
             stream_set_blocking($this->resource, 0);

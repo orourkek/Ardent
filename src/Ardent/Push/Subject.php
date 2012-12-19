@@ -26,9 +26,7 @@ abstract class Subject implements Observable {
     }
     
     public function notify($event, $data = null) {
-        if (!$this->subscribers) {
-            return;
-        } elseif (!$this->subscribers->count()) {
+        if (empty($this->subscribers) || !$this->subscribers->count()) {
             return;
         } else {
             foreach ($this->subscribers as $subscription) {
