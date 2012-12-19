@@ -5,13 +5,7 @@ use Ardent\Push\Events,
     Ardent\Push\Socket,
     Ardent\Push\StreamException;
 
-spl_autoload_register(function($class) {
-    if (0 === strpos($class, 'Ardent\\')) {
-        $class = str_replace('\\', DIRECTORY_SEPARATOR, $class);
-        $file = dirname(__DIR__) . "/src/$class.php";
-        require $file;
-    }
-});
+require dirname(__DIR__) . '/vendor/autoload.php';
 
 
 class HeadersOnlyBuffer {
@@ -57,7 +51,8 @@ $streams = [
 ];
 
 $googSock->subscribe([
-    Events::READY => function() use ($googSock) {
+    Observable::READY => function() use ($googSock) {
+        var_dump(stream_socket_get_name($googSock->getResource(), TRUE));die;
         $googSock->add('' .
             "GET / HTTP/1.1\r\n" .
             "Host: www.google.com\r\n" .
@@ -65,21 +60,21 @@ $googSock->subscribe([
             "Connection: close\r\n\r\n", TRUE
         );
     },
-    Events::DATA => function($data) use ($googSink){
+    Observable::DATA => function($data) use ($googSink){
         $googSink->add($data, TRUE);
     },
-    Events::DONE => function() use ($googSink, &$streams) {
+    Observable::DONE => function() use ($googSink, &$streams) {
         $googSink->rewind();
         unset($streams['goog']);
     },
-    Events::ERROR => function(StreamException $e) use (&$streams) {
+    Observable::ERROR => function(StreamException $e) use (&$streams) {
         unset($streams['goog']);
         throw $e;
     }
 ]);
 
 $yahooSock->subscribe([
-    Events::READY => function() use ($yahooSock) {
+    Observable::READY => function() use ($yahooSock) {
         $yahooSock->add('' .
             "GET / HTTP/1.1\r\n" .
             "Host: www.yahoo.com\r\n" .
@@ -87,21 +82,21 @@ $yahooSock->subscribe([
             "Connection: close\r\n\r\n", TRUE
         );
     },
-    Events::DATA => function($data) use ($yahooSink){
+    Observable::DATA => function($data) use ($yahooSink){
         $yahooSink->add($data, TRUE);
     },
-    Events::DONE => function() use ($yahooSink, &$streams) {
+    Observable::DONE => function() use ($yahooSink, &$streams) {
         $yahooSink->rewind();
         unset($streams['yahoo']);
     },
-    Events::ERROR => function(StreamException $e) use (&$streams) {
+    Observable::ERROR => function(StreamException $e) use (&$streams) {
         unset($streams['yahoo']);
         throw $e;
     }
 ]);
 
 $bingSock->subscribe([
-    Events::READY => function() use ($bingSock) {
+    Observable::READY => function() use ($bingSock) {
         $bingSock->add('' .
             "GET / HTTP/1.1\r\n" .
             "Host: www.bing.com\r\n" .
@@ -109,14 +104,14 @@ $bingSock->subscribe([
             "Connection: close\r\n\r\n", TRUE
         );
     },
-    Events::DATA => function($data) use ($bingSink){
+    Observable::DATA => function($data) use ($bingSink){
         $bingSink->add($data, TRUE);
     },
-    Events::DONE => function() use ($bingSink, &$streams) {
+    Observable::DONE => function() use ($bingSink, &$streams) {
         $bingSink->rewind();
         unset($streams['bing']);
     },
-    Events::ERROR => function(StreamException $e) use (&$streams) {
+    Observable::ERROR => function(StreamException $e) use (&$streams) {
         unset($streams['bing']);
         throw $e;
     }

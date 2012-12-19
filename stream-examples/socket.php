@@ -6,13 +6,7 @@ use Ardent\Push\Events,
     Ardent\Push\SslSocket,
     Ardent\Push\StreamException;
 
-spl_autoload_register(function($class) {
-    if (0 === strpos($class, 'Ardent\\')) {
-        $class = str_replace('\\', DIRECTORY_SEPARATOR, $class);
-        $file = dirname(__DIR__) . "/src/$class.php";
-        require $file;
-    }
-});
+require dirname(__DIR__) . '/vendor/autoload.php';
 
 
 /**
@@ -58,17 +52,17 @@ $stream = (new Socket('tcp://www.google.com:80'))->filter($headersOnlyBuffer);
 $sink = new Memory;
 
 $stream->subscribe([
-    Events::READY => function() use ($stream, $request) {
+    Observable::READY => function() use ($stream, $request) {
         $stream->add($request);
     },
-    Events::DATA => function($data) use ($sink){
+    Observable::DATA => function($data) use ($sink){
         $sink->add($data);
     },
-    Events::DONE => function() use ($sink) {
+    Observable::DONE => function() use ($sink) {
         $sink->rewind();
         echo $sink;
     },
-    Events::ERROR => function(StreamException $e) {
+    Observable::ERROR => function(StreamException $e) {
         throw $e;
     }
 ]);

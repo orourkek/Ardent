@@ -3,17 +3,11 @@
 use Ardent\Push\Events,
     Ardent\Push\Sequence;
 
-spl_autoload_register(function($class) {
-    if (0 === strpos($class, 'Ardent\\')) {
-        $class = str_replace('\\', DIRECTORY_SEPARATOR, $class);
-        $file = dirname(__DIR__) . "/src/$class.php";
-        require $file;
-    }
-});
+require dirname(__DIR__) . '/vendor/autoload.php';
 
 
 $stream = new Sequence(range(1, 5));
-$subscription = $stream->subscribe([Events::DATA => function($data) {
+$subscription = $stream->subscribe([Observable::DATA => function($data) {
     echo "\$data from subscription listener --> $data | ";
 }]);
 

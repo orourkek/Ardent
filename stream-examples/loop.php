@@ -3,13 +3,7 @@
 use Ardent\Push\Sequence,
     Ardent\Push\Events;
 
-spl_autoload_register(function($class) {
-    if (0 === strpos($class, 'Ardent\\')) {
-        $class = str_replace('\\', DIRECTORY_SEPARATOR, $class);
-        $file = dirname(__DIR__) . "/src/$class.php";
-        require $file;
-    }
-});
+require dirname(__DIR__) . '/vendor/autoload.php';
 
 
 /**
@@ -36,7 +30,7 @@ for ($i=0; $i<count($streamData)-3; $i++) {
     $stream->next();
 }
 
-$stream->subscribe([Events::DATA => function($data) { echo $data; }]);
+$stream->subscribe([Observable::DATA => function($data) { echo $data; }]);
 $stream->loop();
 
 echo PHP_EOL;

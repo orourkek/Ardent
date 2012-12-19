@@ -31,7 +31,6 @@ abstract class Subject extends Filter implements Observable {
         } elseif (!$this->subscribers->count()) {
             return;
         } else {
-            $data = $event === Events::DATA ? $this->applyFilters($data) : $data;
             foreach ($this->subscribers as $subscription) {
                 call_user_func($subscription, $event, $data);
             }

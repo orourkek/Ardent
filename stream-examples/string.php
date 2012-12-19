@@ -2,13 +2,7 @@
 
 use Ardent\Push\String;
 
-spl_autoload_register(function($class) {
-    if (0 === strpos($class, 'Ardent\\')) {
-        $class = str_replace('\\', DIRECTORY_SEPARATOR, $class);
-        $file = dirname(__DIR__) . "/src/$class.php";
-        require $file;
-    }
-});
+require dirname(__DIR__) . '/vendor/autoload.php';
 
 
 

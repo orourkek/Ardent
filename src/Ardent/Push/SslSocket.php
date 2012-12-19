@@ -43,14 +43,14 @@ class SslSocket extends Socket {
             case self::CONN_PENDING_CRYPTO:
                 if ($this->enableCrypto()) {
                     $this->state = self::CONN_READY;
-                    $this->notify(Events::READY);
+                    $this->notify(Observable::READY);
                 }
                 break;
             case self::CONN_READY:
                 $read = array($this->socket);
                 $write = $ex = array();
                 if ($this->doSelect($read, $write, $ex, 0, 0) && ($data = $this->read())) {
-                    $this->notify(Events::DATA, $data);
+                    $this->notify(Observable::DATA, $data);
                     return $data;
                 }
                 break;
@@ -66,7 +66,7 @@ class SslSocket extends Socket {
             return true;
         } elseif (false === $crypto) {
             $errorInfo = error_get_last();
-            $this->notify(Events::ERROR, new StreamException(
+            $this->notify(Observable::ERROR, new StreamException(
                 'SSL connect failure: ' . $errorInfo['message']
             ));
         }

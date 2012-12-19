@@ -8,7 +8,7 @@ namespace Ardent\Push;
 interface Streamable extends \Iterator, Observable {
     
     /**
-     * Attach a filter to `Events::DATA` broadcasts
+     * Attach a filter to all data read from the stream
      * 
      * @param callable $callback
      * @return void
@@ -18,7 +18,7 @@ interface Streamable extends \Iterator, Observable {
     /**
      * Attach a sink to which all future data events will be piped
      * 
-     * This method is a shortcut for adding Sinks as subscribers to `Events::DATA` broadcasts.
+     * This method is a shortcut for adding Sinks as subscribers to `Observable::DATA` broadcasts.
      * The resulting Subscriber instance, like all event subscriptions, may be removed from the
      * observable Stream at any time.
      * 

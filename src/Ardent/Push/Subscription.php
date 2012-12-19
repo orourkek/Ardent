@@ -62,7 +62,7 @@ class Subscription {
      */
     public function onReady($callback) {
         if (is_callable($callback)) {
-            $this->callbacks[Events::READY] = $callback;
+            $this->callbacks[Observable::READY] = $callback;
         } else {
             throw new \Ardent\FunctionException(
                 'Invalid subscription callback'
@@ -77,7 +77,7 @@ class Subscription {
      */
     public function onData($callback) {
         if (is_callable($callback)) {
-            $this->callbacks[Events::DATA] = $callback;
+            $this->callbacks[Observable::DATA] = $callback;
         } else {
             throw new \Ardent\FunctionException(
                 'Invalid subscription callback'
@@ -92,7 +92,7 @@ class Subscription {
      */
     public function onDone($callback) {
         if (is_callable($callback)) {
-            $this->callbacks[Events::DONE] = $callback;
+            $this->callbacks[Observable::DONE] = $callback;
         } else {
             throw new \Ardent\FunctionException(
                 'Invalid subscription callback'
@@ -107,7 +107,7 @@ class Subscription {
      */
     public function onError($callback) {
         if (is_callable($callback)) {
-            $this->callbacks[Events::ERROR] = $callback;
+            $this->callbacks[Observable::ERROR] = $callback;
         } else {
             throw new \Ardent\FunctionException(
                 'Invalid subscription callback'
@@ -135,7 +135,7 @@ class Subscription {
         if (!empty($this->callbacks[$event])) {
             call_user_func($this->callbacks[$event], $data);
         }
-        if ($this->unsubscribeOnError && $event == Events::ERROR) {
+        if ($this->unsubscribeOnError && $event == Observable::ERROR) {
             $this->unsubscribe();
         }
     }

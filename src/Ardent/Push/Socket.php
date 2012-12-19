@@ -2,30 +2,43 @@
 
 namespace Ardent\Push;
 
-class Socket extends Stream implements ByteStream {
+class Socket extends Stream {
     
     const CONN_NONE = 0;
-    const CONN_PENDING = 100;
-    const CONN_READY = 200;
+    const CONN_PENDING = 1;
+    const CONN_READY = 2;
     
     private $uri;
-    private $persistent = FALSE;
+    private $scheme;
     private $granularity = 8192;
     private $currentCache;
     
     protected $socket;
     protected $state = self::CONN_NONE;
     
-    public function __construct($uri, $persistent = FALSE) {
+    public function __construct($uriOrSocket) {
+        if (is_string($uriOrSocket)) {
+            $this->setUri($uriOrSocket);
+        } elseif (is_resource($uriOrSocket)) {
+            $this->setSock($uriOrSocket);
+        } else {
+            throw new \Ardent\TypeException(
+                get_class($this) . '::__construct expects a string URI or socket resource at ' .
+                'Argument 1'
+            );
+        }
+    }
+    
+    private function setUri($uri) {
+        $uri = strtolower($uri);
+        
         if (!$uriParts = @parse_url($uri)) {
             throw new \Ardent\DomainException(
                 'Invalid socket URI'
             );
-        } elseif (empty($uriParts['scheme'])) {
-            throw new \Ardent\DomainException(
-                'Invalid socket URI scheme'
-            );
-        } elseif (!($uriParts['scheme'] == 'tcp' || $uriParts['scheme'] == 'udp')) {
+        } elseif (empty($uriParts['scheme']) ||
+            !($uriParts['scheme'] == 'tcp' || $uriParts['scheme'] == 'udp')
+        ) {
             throw new \Ardent\DomainException(
                 'Invalid socket URI scheme'
             );
@@ -33,30 +46,48 @@ class Socket extends Stream implements ByteStream {
             throw new \Ardent\DomainException(
                 'Invalid socket URI port'
             );
-        } elseif (empty($uri['path']) || $uri['path'] == '/') {
-            $uri = rtrim($uri, '/') . '/' . spl_object_hash($this);
         }
         
-        $this->uri = $uri;
-        $this->persistent = filter_var($persistent, FILTER_VALIDATE_BOOLEAN);
+        $this->uri = $uriOrSocket;
+        $this->scheme = $uriParts['scheme'];
+    }
+    
+    protected function setSock($sock) {
+        $meta = stream_get_meta_data($sock);
+        
+        if (empty($meta['stream_type'])) {
+            throw new \Ardent\TypeException(
+                'Invalid socket resource; TCP or UDP stream required'
+            );
+        } elseif ($meta['stream_type'] == 'tcp_socket/ssl') {
+            $this->scheme = 'tcp';
+        } elseif ($meta['stream_type'] == 'udp_socket') {
+            $this->scheme = 'udp';
+        } else {
+            throw new \Ardent\TypeException(
+                'Invalid socket resource; TCP or UDP stream required'
+            );
+        }
+        
+        $this->uri = $meta['stream_type'] . '://' . stream_socket_get_name($sock, true);
+        $this->socket = $sock;
+        $this->state = self::CONN_READY;
+        stream_set_blocking($sock, 0);
     }
     
     public function __destruct() {
-        if (!$this->persistent) {
-            $this->close();
-        }
+        $this->close();
     }
     
-    public function __toString() {
-        return $this->uri;
+    public function close() {
+        @stream_socket_shutdown($this->socket, STREAM_SHUT_RDWR);
+        @fclose($this->socket);
+        $this->socket = NULL;
+        $this->notify(Observable::CLOSE);
     }
     
     public function getResource() {
         return $this->socket;
-    }
-    
-    public function getState() {
-        return $this->state;
     }
     
     /**
@@ -77,7 +108,7 @@ class Socket extends Stream implements ByteStream {
                 $read = $ex = NULL;
                 if ($this->doSelect($read, $write, $ex, 0, 0)) {
                     $this->state = self::CONN_READY;
-                    $this->notify(Events::READY);
+                    $this->notify(Observable::READY);
                 }
                 break;
             case self::CONN_READY:
@@ -87,8 +118,12 @@ class Socket extends Stream implements ByteStream {
                     break;
                 }
                 $data = $this->read();
+                
                 if ($data || $data === '0') {
-                    $this->notify(Events::DATA, $data);
+                    $data = $this->applyFilters($data);
+                    $this->currentCache = $data;
+                    $this->notify(Observable::DATA, $data);
+                    
                     return $data;
                 }
                 break;
@@ -110,25 +145,18 @@ class Socket extends Stream implements ByteStream {
             $msg = "Socket connection failure: {$this->uri}";
             $msg .= $errNo ? "; [Error# $errNo] $errStr" : '';
             
-            $this->notify(Events::ERROR, new StreamException($msg));
+            $this->notify(Observable::ERROR, new StreamException($msg));
         }
     }
     
     private function makeSocketStream() {
         $context = $this->buildContext();
-        
-        if ($this->persistent) {
-            $flags = STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT | STREAM_CLIENT_PERSISTENT;
-        } else {
-            $flags = STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT;
-        }
-        
         $socket = @stream_socket_client(
             $this->uri,
             $errNo,
             $errStr,
             42, // <--- value not used with ASYNC connections
-            $flags,
+            STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT,
             $context
         );
         
@@ -143,10 +171,9 @@ class Socket extends Stream implements ByteStream {
         $data = @fread($this->socket, $this->granularity);
         
         if (!(FALSE === $data || $data === '')) {
-            $this->currentCache = $data;
             return $data;
         } elseif (!is_resource($this->socket) || @feof($this->socket)) {
-            $this->notify(Events::ERROR, new StreamException(
+            $this->notify(Observable::ERROR, new StreamException(
                 'Socket has gone away'
             ));
         }
@@ -168,7 +195,7 @@ class Socket extends Stream implements ByteStream {
             'Socket stream failure: ' . $errorInfo['message']
         );
         
-        $this->notify(Events::ERROR, $e);
+        $this->notify(Observable::ERROR, $e);
 
         return NULL;
     }
@@ -198,7 +225,7 @@ class Socket extends Stream implements ByteStream {
      */
     public function valid() {
         if ($isEof = @feof($this->socket)) {
-            $this->notify(Events::DONE);
+            $this->notify(Observable::DONE);
         }
         
         return !$isEof;
@@ -206,10 +233,6 @@ class Socket extends Stream implements ByteStream {
     
     protected function doSelect($read, $write, $ex, $tvsec, $tvusec) {
         return @stream_select($read, $write, $ex, $tvsec, $tvusec);
-    }
-    
-    public function close() {
-        @fclose($this->socket);
     }
     
     /**
@@ -245,7 +268,7 @@ class Socket extends Stream implements ByteStream {
         
         if (FALSE === $bytes) {
             $errorInfo = error_get_last();
-            $this->notify(Events::ERROR, new StreamException(
+            $this->notify(Observable::ERROR, new StreamException(
                 'Socket write failure: ' . $errorInfo['message']
             ));
             

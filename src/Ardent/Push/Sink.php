@@ -3,6 +3,9 @@
 namespace Ardent\Push;
 
 interface Sink {
-    function filter($callback);
+    
+    /**
+     * Dump new data into the sink
+     */
     function add($data);
 }

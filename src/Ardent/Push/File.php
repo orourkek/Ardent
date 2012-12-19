@@ -5,7 +5,7 @@ namespace Ardent\Push;
 /**
  * A non-blocking, byte-based, filesystem stream with variable data granularity
  */
-class File extends Stream implements \Ardent\CountableSeekableIterator, ByteStream {
+class File extends Stream implements \Ardent\CountableSeekableIterator {
     
     private $uri;
     private $mode = 'ab+';
@@ -17,7 +17,7 @@ class File extends Stream implements \Ardent\CountableSeekableIterator, ByteStre
     
     public function __construct($uri) {
         $this->uri = $uri;
-        $this->notify(Events::READY);
+        $this->notify(Observable::READY);
     }
     
     public function __destruct() {
@@ -66,7 +66,7 @@ class File extends Stream implements \Ardent\CountableSeekableIterator, ByteStre
             return TRUE;
         } else {
             $errorInfo = error_get_last();
-            $this->notify(Events::ERROR, new StreamException(
+            $this->notify(Observable::ERROR, new StreamException(
                 'Stream seek failure: ' . $errorInfo['message']
             ));
             
@@ -85,7 +85,7 @@ class File extends Stream implements \Ardent\CountableSeekableIterator, ByteStre
                 "Stream stat failure: " . $errorInfo['message']
             );
 
-            $this->notify(Events::ERROR, $e);
+            $this->notify(Observable::ERROR, $e);
         }
     }
 
@@ -110,7 +110,7 @@ class File extends Stream implements \Ardent\CountableSeekableIterator, ByteStre
 
         if (FALSE === $position) {
             $errorInfo = error_get_last();
-            $this->notify(Events::ERROR, new StreamException(
+            $this->notify(Observable::ERROR, new StreamException(
                 "Stream stat failure: " . $errorInfo['message']
             ));
 
@@ -151,12 +151,13 @@ class File extends Stream implements \Ardent\CountableSeekableIterator, ByteStre
         
         if (FALSE === $data) {
             $errorInfo = error_get_last();
-            $this->notify(Events::ERROR, new StreamException(
+            $this->notify(Observable::ERROR, new StreamException(
                 "Stream read failure: " . $errorInfo['message']
             ));
             return NULL;
         } elseif ($data !== '') {
-            $this->notify(Events::DATA, $data);
+            $data = $this->applyFilters($data);
+            $this->notify(Observable::DATA, $data);
             return $data;
         } else {
             return NULL;
@@ -176,7 +177,7 @@ class File extends Stream implements \Ardent\CountableSeekableIterator, ByteStre
         
         if (FALSE === $bytes) {
             $errorInfo = error_get_last();
-            $this->notify(Events::ERROR, new StreamException(
+            $this->notify(Observable::ERROR, new StreamException(
                 'Stream write failure: ' . $errorInfo['message']
             ));
         }
@@ -191,7 +192,7 @@ class File extends Stream implements \Ardent\CountableSeekableIterator, ByteStre
             return TRUE;
         } else {
             $errorInfo = error_get_last();
-            $this->notify(Events::ERROR, new StreamException(
+            $this->notify(Observable::ERROR, new StreamException(
                 'Stream initialization failure: ' . $errorInfo['message']
             ));
             
