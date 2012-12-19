@@ -56,66 +56,6 @@ class Subscription {
     }
     
     /**
-     * @param array $callback A callable listener for the READY event
-     * @throws \Ardent\FunctionException On invalid listener callback
-     * @return void
-     */
-    public function onReady($callback) {
-        if (is_callable($callback)) {
-            $this->callbacks[Observable::READY] = $callback;
-        } else {
-            throw new \Ardent\FunctionException(
-                'Invalid subscription callback'
-            );
-        }
-    }
-    
-    /**
-     * @param array $callback A callable listener for the DATA event
-     * @throws \Ardent\FunctionException On invalid listener callback
-     * @return void
-     */
-    public function onData($callback) {
-        if (is_callable($callback)) {
-            $this->callbacks[Observable::DATA] = $callback;
-        } else {
-            throw new \Ardent\FunctionException(
-                'Invalid subscription callback'
-            );
-        }
-    }
-    
-    /**
-     * @param array $callback A callable listener for the DONE event
-     * @throws \Ardent\FunctionException On invalid listener callback
-     * @return void
-     */
-    public function onDone($callback) {
-        if (is_callable($callback)) {
-            $this->callbacks[Observable::DONE] = $callback;
-        } else {
-            throw new \Ardent\FunctionException(
-                'Invalid subscription callback'
-            );
-        }
-    }
-    
-    /**
-     * @param array $callback A callable listener for the ERROR event
-     * @throws \Ardent\FunctionException On invalid listener callback
-     * @return void
-     */
-    public function onError($callback) {
-        if (is_callable($callback)) {
-            $this->callbacks[Observable::ERROR] = $callback;
-        } else {
-            throw new \Ardent\FunctionException(
-                'Invalid subscription callback'
-            );
-        }
-    }
-    
-    /**
      * Remove this subscription from the watchable subject
      * 
      * @return void

@@ -1,6 +1,6 @@
 <?php
 
-use Ardent\Push\Events,
+use Ardent\Push\Observable,
     Ardent\Push\Sequence,
     Ardent\Push\Memory,
     Ardent\Push\Buffer,
@@ -9,7 +9,7 @@ use Ardent\Push\Events,
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 
-// Buffer is a "filter" that buffers emitted data up to the specified size so that
+// Buffer is a filter that buffers emitted data up to the specified size so that
 // downstream listeners won't be notified until the specified number of bytes are reached. This
 // is also helpful for cutting down on the number of times `strtoupper` and `str_rot13` are called
 // in this example because they're only invoked when the buffer actually emits.
@@ -41,4 +41,5 @@ echo $sink; // <-- works like `stream_get_contents()` -- retrieves all remaining
             // or sink after the current position (that's why we rewinded first). Only available for
             // byte-based streams (File/Memory/Temp/String) -- not available for `Sequence` because
             // the generic Sequence stream can contain any type of data structure and won't 
-            // necessarily translate to a string format.
+            // necessarily translate to a string format. Note that filters are NOT applied and
+            // events are NOT broadcast when echoing stream contents.

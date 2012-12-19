@@ -2,7 +2,7 @@
 
 namespace Ardent\Push;
 
-interface Sink extends Filterable {
+interface Sink {
     
     /**
      * Dump new data into the sink

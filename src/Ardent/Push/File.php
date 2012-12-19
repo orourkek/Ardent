@@ -5,7 +5,7 @@ namespace Ardent\Push;
 /**
  * A non-blocking, byte-based, filesystem stream with variable data granularity
  */
-class File extends Stream implements \Ardent\CountableSeekableIterator {
+class File extends StreamSink implements \Ardent\CountableSeekableIterator {
     
     private $uri;
     private $mode = 'ab+';
@@ -152,7 +152,7 @@ class File extends Stream implements \Ardent\CountableSeekableIterator {
             ));
             return NULL;
         } elseif ($data !== '') {
-            $data = $this->applyOutputFilters($data);
+            $data = $this->applyFilters($data);
             $this->notify(Observable::DATA, $data);
             return $data;
         } else {
@@ -168,8 +168,6 @@ class File extends Stream implements \Ardent\CountableSeekableIterator {
         if (!$this->resource) {
             $this->initialize();
         }
-        
-        $data = $this->applyInputFilters($data);
         
         $bytes = @fwrite($this->resource, $data);
         

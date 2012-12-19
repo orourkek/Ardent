@@ -1,6 +1,6 @@
 <?php
 
-use Ardent\Push\Events,
+use Ardent\Push\Observable,
     Ardent\Push\Memory,
     Ardent\Push\Socket,
     Ardent\Push\SslSocket,

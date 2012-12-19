@@ -2,7 +2,29 @@
 
 namespace Ardent\Push;
 
-abstract class Stream extends Subject implements Streamable, Sink {
+abstract class StreamSink extends Subject implements Streamable, Sink {
+    
+    private $filters = array();
+    
+    final public function filter($callback) {
+        if (!is_callable($callback)) {
+            throw new \Ardent\FunctionException(
+                'Invalid filter callback'
+            );
+        }
+        
+        $this->filters[] = $callback;
+        
+        return $this;
+    }
+    
+    final protected function applyFilters($data) {
+        foreach ($this->filters as $transformation) {
+            $data = $transformation($data);
+        }
+        
+        return $data;
+    }
     
     /**
      * Pipe all Stream data events to the specified sink

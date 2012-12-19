@@ -1,7 +1,7 @@
 <?php
 
 use Ardent\Push\Sequence,
-    Ardent\Push\Events;
+    Ardent\Push\Observable;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 

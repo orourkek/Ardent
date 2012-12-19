@@ -2,7 +2,7 @@
 
 namespace Ardent\Push;
 
-abstract class Subject extends Filter implements Observable {
+abstract class Subject implements Observable {
     
     private $subscribers;
     

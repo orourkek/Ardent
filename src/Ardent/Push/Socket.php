@@ -2,7 +2,7 @@
 
 namespace Ardent\Push;
 
-class Socket extends Stream {
+class Socket extends StreamSink {
     
     const CONN_NONE = 0;
     const CONN_PENDING = 1;
@@ -48,7 +48,7 @@ class Socket extends Stream {
             );
         }
         
-        $this->uri = $uriOrSocket;
+        $this->uri = $uri;
         $this->scheme = $uriParts['scheme'];
     }
     
@@ -167,7 +167,7 @@ class Socket extends Stream {
         $data = @fread($this->socket, $this->granularity);
         
         if (!(FALSE === $data || $data === '')) {
-            $data = $this->applyOutputFilters($data);
+            $data = $this->applyFilters($data);
             return $data;
         } elseif (!is_resource($this->socket) || @feof($this->socket)) {
             $this->notify(Observable::ERROR, new StreamException(
@@ -243,8 +243,6 @@ class Socket extends Stream {
         if (empty($data) && $data !== '0') {
             return 0;
         }
-        
-        $data = $this->applyInputFilters($data);
         
         if (!$block) {
             return $this->doSockWrite($data);

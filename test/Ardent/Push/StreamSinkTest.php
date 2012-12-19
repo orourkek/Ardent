@@ -2,7 +2,7 @@
 
 use Ardent\Push\Memory;
 
-class StreamTest extends PHPUnit_Framework_TestCase {
+class StreamSinkTest extends PHPUnit_Framework_TestCase {
     
     public function testPipe() {
         $stream = new Memory();
