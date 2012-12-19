@@ -1,9 +1,7 @@
 <?php
 
 use Ardent\Push\Server,
-    Ardent\Push\Socket,
-    Ardent\Push\Observable,
-    Ardent\Push\StreamException;
+    Ardent\Push\Socket;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
