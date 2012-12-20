@@ -29,6 +29,10 @@ class Socket extends StreamSink {
         }
     }
     
+    public function __toString() {
+        return $this->uri;
+    }
+    
     private function setUri($uri) {
         $uri = strtolower($uri);
         
@@ -59,7 +63,7 @@ class Socket extends StreamSink {
             throw new \Ardent\TypeException(
                 'Invalid socket resource; TCP or UDP stream required'
             );
-        } elseif ($meta['stream_type'] == 'tcp_socket/ssl') {
+        } elseif ($meta['stream_type'] == 'tcp_socket/ssl' || $meta['stream_type'] == 'tcp_socket') {
             $this->scheme = 'tcp';
         } elseif ($meta['stream_type'] == 'udp_socket') {
             $this->scheme = 'udp';
@@ -69,7 +73,7 @@ class Socket extends StreamSink {
             );
         }
         
-        $this->uri = $meta['stream_type'] . '://' . stream_socket_get_name($sock, true);
+        $this->uri = $this->scheme . '://' . stream_socket_get_name($sock, true);
         $this->socket = $sock;
         $this->state = self::CONN_READY;
         stream_set_blocking($sock, 0);
@@ -83,7 +87,6 @@ class Socket extends StreamSink {
         @stream_socket_shutdown($this->socket, STREAM_SHUT_RDWR);
         @fclose($this->socket);
         $this->socket = NULL;
-        $this->notify(Observable::CLOSE);
     }
     
     /**

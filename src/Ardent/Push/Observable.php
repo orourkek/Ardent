@@ -11,7 +11,6 @@ interface Observable {
     const READY = 100;
     const DATA = 200;
     const DONE = 300;
-    const CLOSE = 400;
     const ERROR = 999;
     
     /**

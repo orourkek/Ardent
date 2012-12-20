@@ -13,7 +13,7 @@ $server = new Server('tcp', 9382);
 $server->subscribe([
     Server::EVENT_START => function() { echo "~ SERVER STARTED ~\r\n"; },
     Server::EVENT_STOP => function() { echo "- SERVER STOPPED -\r\n"; },
-    Server::EVENT_CLIENT => function(Socket $stream) { echo "+ CLIENT ACCEPTED + \r\n"; },
+    Server::EVENT_CLIENT => function(Socket $stream) { echo "+ $stream accepted at ".date('c')."\r\n"; },
     Server::EVENT_READABLE => function(Socket $stream) {
         $stream->current();
         $stream->next();
