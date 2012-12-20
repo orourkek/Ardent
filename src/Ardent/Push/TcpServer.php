@@ -2,10 +2,10 @@
 
 namespace Ardent\Push;
 
-class Server extends Subject {
+class TcpServer extends Subject {
     
     const STATE_STOPPED = 0;
-    const STATE_RUNNING = 1;
+    const STATE_STARTED = 1;
     
     const EVENT_STOP = 100;
     const EVENT_START = 200;
@@ -19,11 +19,10 @@ class Server extends Subject {
     const ATTR_IDLE_TIMEOUT = 'attrIdleTimeout';
     const ATTR_SELECT_TVUSEC = 'attrSelectTvusec';
     
-    private $scheme;
     private $host;
     private $port;
     private $socket;
-    private $resourceMap = array();
+    private $clients = array();
     private $state = self::STATE_STOPPED;
     
     private $attributes = array(
@@ -32,8 +31,7 @@ class Server extends Subject {
         self::ATTR_SELECT_TVUSEC => 150
     );
     
-    public function __construct($scheme, $port, $host = '127.0.0.1') {
-        $this->scheme = strtolower($scheme);
+    public function __construct($port, $host = '127.0.0.1') {
         $this->port = $port;
         $this->host = $host;
     }
@@ -43,11 +41,11 @@ class Server extends Subject {
     }
     
     public function stop() {
-        if ($this->state == self::STATE_RUNNING) {
-            foreach ($this->resourceMap as $sockArr) {
+        if ($this->state == self::STATE_STARTED) {
+            foreach ($this->clients as $sockArr) {
                 $sockArr['stream']->close();
             }
-            $this->resourceMap = array();
+            $this->clients = array();
             
             @stream_socket_shutdown($this->socket, STREAM_SHUT_RD);
             @fclose($this->socket);
@@ -57,23 +55,17 @@ class Server extends Subject {
     }
     
     public function start() {
-        if ($this->state == self::STATE_RUNNING) {
+        if ($this->state == self::STATE_STARTED) {
             return;
         }
         
-        $uri = "{$this->scheme}://{$this->host}:{$this->port}";
-        
-        if ($this->scheme == 'tcp') {
-            $socket = @stream_socket_server($uri, $errNo, $errStr);
-        } else {
-            $flags = STREAM_SERVER_LISTEN | STREAM_SERVER_BIND;
-            $socket = @stream_socket_server($uri, $errNo, $errStr, $flags);
-        }
+        $uri = "tcp://{$this->host}:{$this->port}";
+        $socket = @stream_socket_server($uri, $errNo, $errStr);
         
         if ($socket) {
-            $this->state = self::STATE_RUNNING;
             $this->socket = $socket;
             stream_set_blocking($socket, 0);
+            $this->state = self::STATE_STARTED;
             $this->notify(self::EVENT_START);
             
             $this->listen();
@@ -103,7 +95,7 @@ class Server extends Subject {
                 }
             }
             
-            $read = $write = array_map(function($x) { return $x['sock']; }, $this->resourceMap);
+            $read = $write = array_map(function($x) { return $x['sock']; }, $this->clients);
             $ex = NULL;
             
             if ($read && @stream_select($read, $write, $ex, 0, $tvusec)) {
@@ -113,7 +105,7 @@ class Server extends Subject {
                     /**
                      * @var \Ardent\Push\Socket
                      */
-                    $stream = $this->resourceMap[$sockId]['stream'];
+                    $stream = $this->clients[$sockId]['stream'];
                     try {
                         $this->notify(self::EVENT_READABLE, $stream);
                     } catch (\Exception $e) {}
@@ -125,7 +117,7 @@ class Server extends Subject {
                     /**
                      * @var \Ardent\Push\Socket
                      */
-                    $stream = $this->resourceMap[$sockId]['stream'];
+                    $stream = $this->clients[$sockId]['stream'];
                     
                     try {
                         $this->notify(self::EVENT_WRITEABLE, $stream);
@@ -141,7 +133,7 @@ class Server extends Subject {
     }
     
     private function isNewConnectionAllowed() {
-        $currentConnCount = count($this->resourceMap);
+        $currentConnCount = count($this->clients);
         $maxAllowedConns = $this->attributes[self::ATTR_MAX_CONNECTIONS];
         
         return ($currentConnCount < $maxAllowedConns);
@@ -152,25 +144,24 @@ class Server extends Subject {
             $stream = new Socket($sock);
             $sockId = (int) $sock;
             
-            $this->resourceMap[$sockId] = array(
+            $this->clients[$sockId] = array(
                 'stream' => $stream,
                 'sock' => $sock,
                 'connectedAt' => microtime(TRUE),
                 'lastReadAt' => NULL
             );
             
-            $resourceMap = &$this->resourceMap;
-            $sockReadListener = function() use ($resourceMap, $sockId) {
-                $this->resourceMap[$sockId]['lastReadAt'] = time();
+            $clients = &$this->clients;
+            $sockReadListener = function() use ($clients, $sockId) {
+                $this->clients[$sockId]['lastReadAt'] = time();
             };
             
             $stream->subscribe(array(
                 Observable::DATA => $sockReadListener
             ), FALSE);
             
-            // @todo
-            // non-blocking behavior seems to fail without this
-            usleep(250);
+            // non-blocking behavior fails without this short break
+            usleep(100);
             
             $this->notify(self::EVENT_CLIENT, $stream);
             
@@ -184,14 +175,14 @@ class Server extends Subject {
     }
     
     private function clearDeadConnections() {
-        foreach ($this->resourceMap as $sockId => $sockArr) {
+        foreach ($this->clients as $sockId => $sockArr) {
             if (!is_resource($sockArr['sock'])) {
                 /**
                  * @var \Ardent\Push\Socket
                  */
                 $stream = $sockArr['stream'];
                 $stream->close();
-                unset($this->resourceMap[$sockId]);
+                unset($this->clients[$sockId]);
             }
         }
     }
@@ -200,7 +191,7 @@ class Server extends Subject {
         $now = time();
         $maxAllowableIdleTime = $this->attributes[self::ATTR_IDLE_TIMEOUT];
         
-        foreach ($this->resourceMap as $sockId => $sockArr) {
+        foreach ($this->clients as $sockId => $sockArr) {
             $idleTime = $sockArr['lastReadAt']
                 ? $now - $sockArr['lastReadAt']
                 : $now - $sockArr['connectedAt'];
@@ -211,7 +202,7 @@ class Server extends Subject {
                  */
                 $stream = $sockArr['stream'];
                 $stream->close();
-                unset($this->resourceMap[$sockId]);
+                unset($this->clients[$sockId]);
             }
         }
     }
