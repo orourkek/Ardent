@@ -215,7 +215,7 @@ class TcpServer extends Subject {
             Observable::DATA => $sockReadListener
         ), FALSE);
         
-        // non-blocking behavior spazzes out if we don't take a short break
+        // Take a break, man; you are working too hard.
         usleep(100);
         
         $this->notify(self::EVENT_CLIENT, $stream);
