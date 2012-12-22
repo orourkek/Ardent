@@ -100,7 +100,9 @@ class TcpServer extends Subject {
         }
         
         $host = filter_var($this->host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)
-            ? "[{$this->host}]" : $this->host;
+            ? "[{$this->host}]"
+            : $this->host;
+        
         $uri = "tcp://{$host}:{$this->port}";
         
         $flags = STREAM_SERVER_BIND|STREAM_SERVER_LISTEN;
@@ -256,8 +258,6 @@ class TcpServer extends Subject {
         }), FALSE);
         
         $this->notify(self::EVENT_CLIENT, $stream);
-        
-        usleep(250);
     }
     
     private function processPendingSslConns() {
