@@ -151,11 +151,7 @@ class TcpServer extends Subject {
             $usec = $this->attributes[self::ATTR_SELECT_USEC];
             
             if ($this->isNewConnectionAllowed()) {
-                $read = array($this->socket);
-                $write = $ex = NULL;
-                if (@stream_select($read, $write, $ex, $sec, $usec)) {
-                    $this->accept();
-                }
+                $this->acceptNewClients();
             }
             
             if (!empty($this->clientsPendingCrypto)) {
@@ -217,31 +213,29 @@ class TcpServer extends Subject {
         return ($currentConnCount < $maxAllowedConns);
     }
     
-    private function accept() {
-        if (!$rawSock = @stream_socket_accept($this->socket, 0)) {
-            $err = error_get_last();
-            $this->notify(self::EVENT_ERROR, new StreamException(
-                'Socket accept failure: ' . $err['message'],
-                $err['type']
-            ));
-            
+    private function acceptNewClients() {
+        $read = array($this->socket);
+        $write = $ex = NULL;
+        if (!@stream_select($read, $write, $ex, $sec, $usec)) {
             return;
         }
-        
-        stream_set_blocking($rawSock, 0);
-        
-        $sockArr = array(
-            'stream' => NULL,
-            'rawSock' => $rawSock,
-            'connectedAt' => microtime(TRUE),
-            'lastReadAt' => NULL
-        );
-        
-        if ($this->attributes[self::ATTR_SSL_ENABLED]) {
-            $sockId = (int) $rawSock;
-            $this->clientsPendingCrypto[$sockId] = $sockArr;
-        } else {
-            $this->finalizeNewClient($sockArr);
+    
+        while ($rawSock = @stream_socket_accept($this->socket, 0)) {
+            stream_set_blocking($rawSock, 0);
+            
+            $sockArr = array(
+                'stream' => NULL,
+                'rawSock' => $rawSock,
+                'connectedAt' => microtime(TRUE),
+                'lastReadAt' => NULL
+            );
+            
+            if ($this->attributes[self::ATTR_SSL_ENABLED]) {
+                $sockId = (int) $rawSock;
+                $this->clientsPendingCrypto[$sockId] = $sockArr;
+            } else {
+                $this->finalizeNewClient($sockArr);
+            }
         }
     }
     

@@ -84,7 +84,10 @@ class Socket extends StreamSink {
     }
     
     public function close() {
-        @fclose($this->socket);
+        if (is_resource($this->socket)) {
+            fclose($this->socket);
+        }
+        
         $this->socket = NULL;
     }
     
@@ -133,9 +136,7 @@ class Socket extends StreamSink {
     protected function connect() {
         list($socket, $errNo, $errStr) = $this->makeSocketStream();
         
-        // A SOCKET_EWOULDBLOCK error means the socket is trying really hard to connect and that
-        // we should continue on as if the connection was successful
-        if (FALSE !== $socket || $errNo === SOCKET_EWOULDBLOCK) {
+        if (FALSE !== $socket) {
             $this->state = self::CONN_PENDING;
             $this->socket = $socket;
             stream_set_blocking($socket, 0);
