@@ -144,21 +144,3 @@ echo "\r\nBing Sink:\r\n=============================================\r\n";
 echo $bingSink;
 
 var_dump($timeEnd - $timeStart);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
