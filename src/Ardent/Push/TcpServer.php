@@ -34,7 +34,6 @@ class TcpServer extends Subject {
     private $socket;
     private $clients = array();
     private $clientsPendingCrypto = array();
-    private $isCryptoEnabled = FALSE;
     private $state = self::STATE_STOPPED;
     
     private $attributes = array(
@@ -104,17 +103,14 @@ class TcpServer extends Subject {
             ? "[{$this->host}]" : $this->host;
         $uri = "tcp://{$host}:{$this->port}";
         
-        if ($this->cryptoEnabled = $this->attributes[self::ATTR_SSL_ENABLED]) {
-            $flags = STREAM_SERVER_BIND|STREAM_SERVER_LISTEN;
-            $context = $this->buildSslContext();
-            $socket = @stream_socket_server($uri, $errNo, $errStr, $flags, $context);
-        } else {
-            $socket = @stream_socket_server($uri, $errNo, $errStr);
-        }
+        $flags = STREAM_SERVER_BIND|STREAM_SERVER_LISTEN;
+        $context = $this->buildSslContext();
+        $socket = @stream_socket_server($uri, $errNo, $errStr, $flags, $context);
         
         if ($socket) {
-            $this->socket = $socket;
             stream_set_blocking($socket, 0);
+            
+            $this->socket = $socket;
             $this->state = self::STATE_STARTED;
             $this->notify(self::EVENT_START);
             
@@ -149,10 +145,13 @@ class TcpServer extends Subject {
     
     private function listen() {
         while (TRUE) {
+            $sec = $this->attributes[self::ATTR_SELECT_SEC];
+            $usec = $this->attributes[self::ATTR_SELECT_USEC];
+            
             if ($this->isNewConnectionAllowed()) {
                 $read = array($this->socket);
                 $write = $ex = NULL;
-                if (@stream_select($read, $write, $ex, 0, 0)) {
+                if (@stream_select($read, $write, $ex, $sec, $usec)) {
                     $this->accept();
                 }
             }
@@ -168,11 +167,10 @@ class TcpServer extends Subject {
                 }
             }
             
-            $usec = $this->attributes[self::ATTR_SELECT_USEC];
             $read = $write = $arr;
             $ex = NULL;
             
-            if (!empty($arr) && stream_select($read, $write, $ex, 0, $usec)) {
+            if (!empty($arr) && stream_select($read, $write, $ex, $sec, $usec)) {
                 
                 foreach ($read as $rawSock) {
                     $sockId = (int) $rawSock;
@@ -200,6 +198,7 @@ class TcpServer extends Subject {
                 }
             }
             
+            $this->clearDeadConnections();
             $this->closeIdleConnections();
             
             $this->notify(self::EVENT_LOOP_ITER);
@@ -207,8 +206,11 @@ class TcpServer extends Subject {
     }
     
     private function isNewConnectionAllowed() {
+        if (!$maxAllowedConns = $this->attributes[self::ATTR_MAX_CONN_CONCURRENCY]) {
+            return TRUE;
+        }
+        
         $currentConnCount = count($this->clients);
-        $maxAllowedConns = $this->attributes[self::ATTR_MAX_CONN_CONCURRENCY];
         
         return ($currentConnCount < $maxAllowedConns);
     }
@@ -233,7 +235,7 @@ class TcpServer extends Subject {
             'lastReadAt' => NULL
         );
         
-        if ($this->cryptoEnabled) {
+        if ($this->attributes[self::ATTR_SSL_ENABLED]) {
             $sockId = (int) $rawSock;
             $this->clientsPendingCrypto[$sockId] = $sockArr;
         } else {
@@ -254,6 +256,8 @@ class TcpServer extends Subject {
         }), FALSE);
         
         $this->notify(self::EVENT_CLIENT, $stream);
+        
+        usleep(250);
     }
     
     private function processPendingSslConns() {
@@ -273,6 +277,19 @@ class TcpServer extends Subject {
                     $err['type']
                 ));
                 unset($this->clientsPendingCrypto[$sockId]);
+            }
+        }
+    }
+    
+    private function clearDeadConnections() {
+        foreach ($this->clients as $sockId => $sockArr) {
+            if (!is_resource($sockArr['rawSock'])) {
+                /**
+                 * @var \Ardent\Push\Socket
+                 */
+                $stream = $sockArr['stream'];
+                $stream->close();
+                unset($this->clients[$sockId]);
             }
         }
     }
