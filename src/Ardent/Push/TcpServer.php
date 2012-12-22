@@ -50,9 +50,6 @@ class TcpServer extends Subject {
     );
     
     /**
-     * Note: When specifying a numerical IPv6 address (e.g. fe80::1), you must enclose the IP in 
-     * square brackets—for example, [fe80::1].
-     * 
      * @param int $port The port on which to accept new client connections
      * @param string $host The IP address to which the socket server should be bound
      */
@@ -79,11 +76,15 @@ class TcpServer extends Subject {
     public function stop() {
         if ($this->state == self::STATE_STARTED) {
             foreach ($this->clients as $sockArr) {
-                $sockArr['stream']->close();
+                /**
+                 * @var \Ardent\Push\Socket
+                 */
+                $sockArr['sockStream']->close();
             }
-            $this->clients = array();
             
             @fclose($this->socket);
+            $this->socket = NULL;
+            $this->clients = array();
             
             $this->notify(self::EVENT_STOP);
         }
@@ -176,7 +177,7 @@ class TcpServer extends Subject {
                     /**
                      * @var \Ardent\Push\Socket
                      */
-                    $stream = $this->clients[$sockId]['stream'];
+                    $stream = $this->clients[$sockId]['sockStream'];
                     try {
                         $this->notify(self::EVENT_READABLE, $stream);
                     } catch (\Exception $e) {}
@@ -188,7 +189,7 @@ class TcpServer extends Subject {
                     /**
                      * @var \Ardent\Push\Socket
                      */
-                    $stream = $this->clients[$sockId]['stream'];
+                    $stream = $this->clients[$sockId]['sockStream'];
                     
                     try {
                         $this->notify(self::EVENT_WRITEABLE, $stream);
@@ -224,7 +225,7 @@ class TcpServer extends Subject {
             stream_set_blocking($rawSock, 0);
             
             $sockArr = array(
-                'stream' => NULL,
+                'sockStream' => NULL,
                 'rawSock' => $rawSock,
                 'connectedAt' => microtime(TRUE),
                 'lastReadAt' => NULL
@@ -243,7 +244,7 @@ class TcpServer extends Subject {
         $rawSock = $sockArr['rawSock'];
         $sockId = (int) $rawSock;
         $stream = new Socket($rawSock);
-        $sockArr['stream'] = $stream;
+        $sockArr['sockStream'] = $stream;
         $this->clients[$sockId] = $sockArr;
         
         $clients = &$this->clients;
@@ -281,7 +282,7 @@ class TcpServer extends Subject {
                 /**
                  * @var \Ardent\Push\Socket
                  */
-                $stream = $sockArr['stream'];
+                $stream = $sockArr['sockStream'];
                 $stream->close();
                 unset($this->clients[$sockId]);
             }
@@ -301,7 +302,7 @@ class TcpServer extends Subject {
                 /**
                  * @var \Ardent\Push\Socket
                  */
-                $stream = $sockArr['stream'];
+                $stream = $sockArr['sockStream'];
                 $stream->close();
                 unset($this->clients[$sockId]);
             }
