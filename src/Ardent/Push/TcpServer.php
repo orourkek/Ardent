@@ -111,7 +111,7 @@ class TcpServer extends Subject {
         } else {
             $socket = @stream_socket_server($uri, $errNo, $errStr);
         }
-        echo $uri, "\r\n";
+        
         if ($socket) {
             $this->socket = $socket;
             stream_set_blocking($socket, 0);
