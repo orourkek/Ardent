@@ -148,55 +148,13 @@ class TcpServer extends Subject {
     
     private function listen() {
         while (TRUE) {
-            $sec = $this->attributes[self::ATTR_SELECT_SEC];
-            $usec = $this->attributes[self::ATTR_SELECT_USEC];
-            
-            if ($this->isNewConnectionAllowed()) {
-                $this->acceptNewClients();
-            }
+            $this->acceptNewClients();
             
             if (!empty($this->clientsPendingCrypto)) {
                 $this->processPendingSslConns();
             }
             
-            $arr = array();
-            foreach ($this->clients as $sockId => $clientArr) {
-                if (is_resource($clientArr['rawSock'])) {
-                    $arr[] = $clientArr['rawSock'];
-                }
-            }
-            
-            $read = $write = $arr;
-            $ex = NULL;
-            
-            if (!empty($arr) && stream_select($read, $write, $ex, $sec, $usec)) {
-                
-                foreach ($read as $rawSock) {
-                    $sockId = (int) $rawSock;
-                    
-                    /**
-                     * @var \Ardent\Push\Socket
-                     */
-                    $stream = $this->clients[$sockId]['sockStream'];
-                    try {
-                        $this->notify(self::EVENT_READABLE, $stream);
-                    } catch (\Exception $e) {}
-                }
-                
-                foreach ($write as $rawSock) {
-                    $sockId = (int) $rawSock;
-                    
-                    /**
-                     * @var \Ardent\Push\Socket
-                     */
-                    $stream = $this->clients[$sockId]['sockStream'];
-                    
-                    try {
-                        $this->notify(self::EVENT_WRITEABLE, $stream);
-                    } catch (\Exception $e) {}
-                }
-            }
-            
+            $this->broadcastActionableSockets();
             $this->clearDeadConnections();
             $this->closeIdleConnections();
             
@@ -215,6 +173,13 @@ class TcpServer extends Subject {
     }
     
     private function acceptNewClients() {
+        if (!$this->isNewConnectionAllowed()) {
+            return;
+        }
+        
+        $sec = $this->attributes[self::ATTR_SELECT_SEC];
+        $usec = $this->attributes[self::ATTR_SELECT_USEC];
+            
         $read = array($this->socket);
         $write = $ex = NULL;
         if (!@stream_select($read, $write, $ex, $sec, $usec)) {
@@ -236,6 +201,10 @@ class TcpServer extends Subject {
                 $this->clientsPendingCrypto[$sockId] = $sockArr;
             } else {
                 $this->finalizeNewClient($sockArr);
+            }
+            
+            if (!$this->isNewConnectionAllowed()) {
+                break;
             }
         }
     }
@@ -272,6 +241,49 @@ class TcpServer extends Subject {
                     $err['type']
                 ));
                 unset($this->clientsPendingCrypto[$sockId]);
+            }
+        }
+    }
+    
+    private function broadcastActionableSockets() {
+        $arr = array();
+        foreach ($this->clients as $sockId => $clientArr) {
+            if (is_resource($clientArr['rawSock'])) {
+                $arr[] = $clientArr['rawSock'];
+            }
+        }
+        
+        $sec = $this->attributes[self::ATTR_SELECT_SEC];
+        $usec = $this->attributes[self::ATTR_SELECT_USEC];
+        
+        $read = $write = $arr;
+        $ex = NULL;
+        
+        if (!empty($arr) && stream_select($read, $write, $ex, $sec, $usec)) {
+            
+            foreach ($read as $rawSock) {
+                $sockId = (int) $rawSock;
+                
+                /**
+                 * @var \Ardent\Push\Socket
+                 */
+                $stream = $this->clients[$sockId]['sockStream'];
+                try {
+                    $this->notify(self::EVENT_READABLE, $stream);
+                } catch (\Exception $e) {}
+            }
+            
+            foreach ($write as $rawSock) {
+                $sockId = (int) $rawSock;
+                
+                /**
+                 * @var \Ardent\Push\Socket
+                 */
+                $stream = $this->clients[$sockId]['sockStream'];
+                
+                try {
+                $this->notify(self::EVENT_WRITEABLE, $stream);
+                } catch (\Exception $e) {}
             }
         }
     }
