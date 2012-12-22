@@ -84,7 +84,6 @@ class Socket extends StreamSink {
     }
     
     public function close() {
-        @stream_socket_shutdown($this->socket, STREAM_SHUT_RDWR);
         @fclose($this->socket);
         $this->socket = NULL;
     }
