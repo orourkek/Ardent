@@ -19,10 +19,6 @@ class File extends StreamSink implements \Ardent\CountableSeekableIterator {
         $this->notify(Observable::READY);
     }
     
-    public function __destruct() {
-        $this->close();
-    }
-    
     /**
      * @link http://php.net/manual/en/countable.count.php
      * @return int Returns the total size in bytes of the stream or ZERO on failure
@@ -70,6 +66,8 @@ class File extends StreamSink implements \Ardent\CountableSeekableIterator {
             return FALSE;
         }
         
+        $this->keyCache = ftell($this->resource);
+        
         return TRUE;
     }
 
@@ -81,6 +79,8 @@ class File extends StreamSink implements \Ardent\CountableSeekableIterator {
         if (!$this->resource) {
             $this->initialize();
         }
+        
+        $this->keyCache = NULL;
         
         if (!@rewind($this->resource)) {
             $errorInfo = error_get_last();

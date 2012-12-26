@@ -8,8 +8,12 @@ class Socket extends StreamSink {
     const CONN_PENDING = 1;
     const CONN_READY = 2;
     
+    const EVENT_CLOSE = 'ardent.push.socket.close';
+    
     private $uri;
     private $scheme;
+    private $host;
+    private $port;
     private $granularity = 8192;
     private $currentCache;
     
@@ -17,10 +21,10 @@ class Socket extends StreamSink {
     protected $state = self::CONN_NONE;
     
     public function __construct($uriOrSocket) {
-        if (is_string($uriOrSocket)) {
-            $this->setUri($uriOrSocket);
-        } elseif (is_resource($uriOrSocket)) {
+        if (is_resource($uriOrSocket)) {
             $this->setSock($uriOrSocket);
+        } elseif (is_string($uriOrSocket)) {
+            $this->setUri($uriOrSocket);
         } else {
             throw new \Ardent\TypeException(
                 get_class($this) . '::__construct expects a string URI or socket resource at ' .
@@ -29,8 +33,33 @@ class Socket extends StreamSink {
         }
     }
     
-    public function __toString() {
-        return $this->uri;
+    private function setSock($sock) {
+        $meta = stream_get_meta_data($sock);
+        
+        if (empty($meta['stream_type'])) {
+            throw new \Ardent\TypeException(
+                'Invalid socket resource; TCP or UDP stream required'
+            );
+        } elseif ($meta['stream_type'] == 'tcp_socket/ssl' || $meta['stream_type'] == 'tcp_socket') {
+            $this->scheme = 'tcp';
+        } elseif ($meta['stream_type'] == 'udp_socket') {
+            $this->scheme = 'udp';
+        } else {
+            throw new \Ardent\TypeException(
+                'Invalid socket resource; TCP or UDP stream required'
+            );
+        }
+        
+        $sockName = stream_socket_get_name($sock, TRUE);
+        $uriParts = @parse_url($sockName);
+        
+        $this->uri = $this->scheme . '://' . $sockName;
+        $this->host = $uriParts['host'];
+        $this->port = $uriParts['port'];
+        $this->socket = $sock;
+        $this->state = self::CONN_READY;
+        
+        stream_set_blocking($sock, 0);
     }
     
     private function setUri($uri) {
@@ -54,33 +83,28 @@ class Socket extends StreamSink {
         
         $this->uri = $uri;
         $this->scheme = $uriParts['scheme'];
+        $this->host = $uriParts['host'];
+        $this->port = $uriParts['port'];
     }
     
-    protected function setSock($sock) {
-        $meta = stream_get_meta_data($sock);
-        
-        if (empty($meta['stream_type'])) {
-            throw new \Ardent\TypeException(
-                'Invalid socket resource; TCP or UDP stream required'
-            );
-        } elseif ($meta['stream_type'] == 'tcp_socket/ssl' || $meta['stream_type'] == 'tcp_socket') {
-            $this->scheme = 'tcp';
-        } elseif ($meta['stream_type'] == 'udp_socket') {
-            $this->scheme = 'udp';
-        } else {
-            throw new \Ardent\TypeException(
-                'Invalid socket resource; TCP or UDP stream required'
-            );
-        }
-        
-        $this->uri = $this->scheme . '://' . stream_socket_get_name($sock, true);
-        $this->socket = $sock;
-        $this->state = self::CONN_READY;
-        stream_set_blocking($sock, 0);
+    public function __toString() {
+        return $this->uri;
     }
     
-    public function __destruct() {
-        $this->close();
+    public function getUri() {
+        return $this->uri;
+    }
+    
+    public function getScheme() {
+        return $this->scheme;
+    }
+    
+    public function getHost() {
+        return $this->host;
+    }
+    
+    public function getPort() {
+        return $this->port;
     }
     
     public function close() {
@@ -89,6 +113,7 @@ class Socket extends StreamSink {
         }
         
         $this->socket = NULL;
+        $this->notify(self::EVENT_CLOSE, $this);
     }
     
     /**
@@ -101,17 +126,6 @@ class Socket extends StreamSink {
         }
         
         switch ($this->state) {
-            case self::CONN_NONE:
-                $this->connect();
-                break;
-            case self::CONN_PENDING:
-                $write = array($this->socket);
-                $read = $ex = NULL;
-                if ($this->doSelect($read, $write, $ex, 0, 0)) {
-                    $this->state = self::CONN_READY;
-                    $this->notify(Observable::READY);
-                }
-                break;
             case self::CONN_READY:
                 $read = array($this->socket);
                 $write = $ex = NULL;
@@ -127,6 +141,19 @@ class Socket extends StreamSink {
                     
                     return $data;
                 }
+                break;
+            
+            case self::CONN_PENDING:
+                $write = array($this->socket);
+                $read = $ex = NULL;
+                if ($this->doSelect($read, $write, $ex, 0, 0)) {
+                    $this->state = self::CONN_READY;
+                    $this->notify(Observable::READY);
+                }
+                break;
+            
+            case self::CONN_NONE:
+                $this->connect();
                 break;
         }
         
@@ -239,30 +266,14 @@ class Socket extends StreamSink {
      * Write data to the socket sink
      * 
      * @param string $data
-     * @param bool $block
      * @return int Returns the number of bytes written to the socket
      */
-    public function add($data, $block = FALSE) {
+    public function add($data) {
         if (empty($data) && $data !== '0') {
             return 0;
         }
         
-        if (!$block) {
-            return $this->doSockWrite($data);
-        }
-        
-        $bytesToWrite = strlen($data);
-        $bytesWritten = 0;
-        
-        while ($bytesWritten < $bytesToWrite) {
-            if ($bytes = $this->doSockWrite(substr($data, $bytesWritten))) {
-                $bytesWritten += $bytes;
-            } else {
-                break;
-            }
-        }
-        
-        return $bytesWritten;
+        return $this->doSockWrite($data);
     }
     
     private function doSockWrite($data) {

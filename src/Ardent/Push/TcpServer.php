@@ -16,7 +16,7 @@ class TcpServer extends Subject {
     const EVENT_READABLE = 300;
     const EVENT_WRITEABLE = 400;
     const EVENT_LOOP_ITER = 500;
-    const EVENT_ERROR = 900;
+    const EVENT_ERROR = 999;
     
     const ATTR_MAX_CONN_CONCURRENCY = 'attrMaxConnConcurrency';
     const ATTR_IDLE_TIMEOUT = 'attrIdleTimeout';
@@ -162,16 +162,6 @@ class TcpServer extends Subject {
         }
     }
     
-    private function isNewConnectionAllowed() {
-        if (!$maxAllowedConns = $this->attributes[self::ATTR_MAX_CONN_CONCURRENCY]) {
-            return TRUE;
-        }
-        
-        $currentConnCount = count($this->clients);
-        
-        return ($currentConnCount < $maxAllowedConns);
-    }
-    
     private function acceptNewClients() {
         if (!$this->isNewConnectionAllowed()) {
             return;
@@ -209,6 +199,16 @@ class TcpServer extends Subject {
         }
     }
     
+    protected function isNewConnectionAllowed() {
+        if (!$maxAllowedConns = $this->attributes[self::ATTR_MAX_CONN_CONCURRENCY]) {
+            return TRUE;
+        }
+        
+        $currentConnCount = count($this->clients);
+        
+        return ($currentConnCount < $maxAllowedConns);
+    }
+    
     private function finalizeNewClient(array $sockArr) {
         $rawSock = $sockArr['rawSock'];
         $sockId = (int) $rawSock;
@@ -235,11 +235,7 @@ class TcpServer extends Subject {
                 $this->finalizeNewClient($sockArr);
                 unset($this->clientsPendingCrypto[$sockId]);
             } elseif ($isCryptoEnabled === FALSE) {
-                $err = error_get_last();
-                $this->notify(self::EVENT_ERROR, new StreamException(
-                    'Socket SSL crypto failure: ' . $err['message'],
-                    $err['type']
-                ));
+                // crypto error
                 unset($this->clientsPendingCrypto[$sockId]);
             }
         }
