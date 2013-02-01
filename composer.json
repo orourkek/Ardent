@@ -5,6 +5,7 @@
     "keywords": ["ardent", "library", "php", "spl"],
     "homepage": "https://github.com/morrisonlevi/Ardent",
     "license": "MIT",
+    "version": "0.5.0",
     "authors": [
         {
             "name": "Levi Morrison",
