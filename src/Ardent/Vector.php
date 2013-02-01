@@ -6,7 +6,7 @@ use ArrayAccess;
 
 class Vector implements ArrayAccess, Collection {
 
-    protected $array = [];
+    protected $array = array();
 
     /**
      * @param mixed,... $varargs
@@ -20,7 +20,7 @@ class Vector implements ArrayAccess, Collection {
      * @return void
      */
     function clear() {
-        $this->array = [];
+        $this->array = array();
         $this->cache = NULL;
     }
 
@@ -226,10 +226,14 @@ class Vector implements ArrayAccess, Collection {
      * Filters elements of the vector using a callback function.
      *
      * @param callable $callable bool function($value, $key = NULL)
+     *
+     * @throws TypeException
      * @return Vector
      */
-    function filter(callable $callable) {
-
+    function filter($callable) {
+        if(!is_callable($callable)) {
+            throw new TypeException();
+        }
         $vector = new Vector;
 
         foreach ($this->array as $i => $item) {
@@ -245,9 +249,14 @@ class Vector implements ArrayAccess, Collection {
      * Creates a new vector with the result of calling $callable on each item.
      *
      * @param callable $callable mixed function($value, $key = NULL)
+     *
+     * @throws TypeException
      * @return Vector
      */
-    function map(callable $callable) {
+    function map($callable) {
+        if(!is_callable($callable)) {
+            throw new TypeException();
+        }
 
         $vector = new Vector;
 
@@ -260,9 +269,14 @@ class Vector implements ArrayAccess, Collection {
      * Applies $callable to each item in the vector.
      *
      * @param callable $callable function($value, $key = NULL)
+     *
+     * @throws TypeException
      * @return void
      */
-    function apply(callable $callable) {
+    function apply($callable) {
+        if(!is_callable($callable)) {
+            throw new TypeException();
+        }
 
         foreach ($this->array as $i => $value) {
             $this->array[$i] = call_user_func($callable, $value, $i);

@@ -8,9 +8,10 @@ interface Mediator {
      * @param string $event
      * @param callable $callable
      *
+     * @throws TypeException
      * @return void
      */
-    function addListener($event, callable $callable);
+    function addListener($event, $callable);
 
     /**
      * @param string $event
@@ -18,7 +19,7 @@ interface Mediator {
      *
      * @return void
      */
-    function removeListener($event, callable $callable);
+    function removeListener($event, $callable);
 
     /**
      * @param string $event

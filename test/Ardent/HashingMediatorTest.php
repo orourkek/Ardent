@@ -28,9 +28,16 @@ class HashingMediatorTest extends \PHPUnit_Framework_TestCase {
 
         });
 
-        $expected = [$doNothing];
+        $expected = array($doNothing);
         $actual = $this->intercessor->getListeners('do');
         $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * @expectedException \Ardent\TypeException
+     */
+    function testAddListenerException() {
+        $this->intercessor->addListener('error', 'notCallable');
     }
 
     function testRemoveListener() {
@@ -48,7 +55,7 @@ class HashingMediatorTest extends \PHPUnit_Framework_TestCase {
         $this->intercessor->addListener('hast', $fn);
         $this->intercessor->removeEvent('do');
 
-        $expected = ['hast'];
+        $expected = array('hast');
         $actual = $this->intercessor->getEvents();
         $this->assertEquals($expected, $actual);
     }
@@ -58,7 +65,7 @@ class HashingMediatorTest extends \PHPUnit_Framework_TestCase {
 
         $this->intercessor->clear();
 
-        $expected = [];
+        $expected = array();
         $actual = $this->intercessor->getEvents();
         $this->assertEquals($expected, $actual);
     }
@@ -134,13 +141,13 @@ class HashingMediatorTest extends \PHPUnit_Framework_TestCase {
         $this->intercessor->addListener('do', 'strtolower');
         $this->intercessor->addListener('do', 'base64_encode');
 
-        $expectedListeners = ['strtolower', 'base64_encode'];
+        $expectedListeners = array('strtolower', 'base64_encode');
         $actualListeners = $this->intercessor->getListeners('do');
         $this->assertEquals($expectedListeners, $actualListeners);
     }
 
     function testGetEventsEmpty() {
-        $expected = [];
+        $expected = array();
         $actual = $this->intercessor->getEvents();
         $this->assertEquals($expected, $actual);
     }
@@ -148,7 +155,7 @@ class HashingMediatorTest extends \PHPUnit_Framework_TestCase {
     function testGetEvents() {
         $this->intercessor->addListener('do', 'str_rot13');
 
-        $expected = ['do'];
+        $expected = array('do');
         $actual = $this->intercessor->getEvents();
         $this->assertEquals($expected, $actual);
     }

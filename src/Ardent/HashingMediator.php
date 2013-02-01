@@ -9,7 +9,7 @@ namespace Ardent;
  */
 class HashingMediator implements Mediator {
 
-    protected $events = [];
+    protected $events = array();
 
     /**
      * @param string $event
@@ -17,7 +17,10 @@ class HashingMediator implements Mediator {
      *
      * @return void
      */
-    function addListener($event, callable $callable) {
+    function addListener($event, $callable) {
+        if(!is_callable($callable)) {
+            throw new TypeException();
+        }
         $this->events[$event][$this->hash($callable)] = $callable;
     }
 
@@ -27,11 +30,14 @@ class HashingMediator implements Mediator {
      *
      * @return void
      */
-    function removeListener($event, callable $callable) {
+    function removeListener($event, $callable) {
+        if(!is_callable($callable)) {
+            return;
+        }
         unset($this->events[$event][$this->hash($callable)]);
     }
 
-    function hash(callable $callable) {
+    function hash($callable) {
         if (is_string($callable)) {
             return $callable;
         }
@@ -57,7 +63,7 @@ class HashingMediator implements Mediator {
      * @return void
      */
     function clear() {
-        $this->events = [];
+        $this->events = array();
     }
 
     /**
@@ -69,7 +75,7 @@ class HashingMediator implements Mediator {
         if (empty($this->events[$event])) {
             return;
         }
-        
+
         $args = func_get_args();
         array_shift($args);
 
@@ -90,7 +96,7 @@ class HashingMediator implements Mediator {
         if ($eventExists && is_array($this->events[$event])) {
             return array_values($this->events[$event]);
         }
-        return [];
+        return array();
     }
 
     /**
