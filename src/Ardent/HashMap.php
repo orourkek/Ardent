@@ -69,7 +69,12 @@ class HashMap implements Map {
         if (!array_key_exists($hash, $this->storage)) {
             throw new KeyException;
         }
-        return $this->fetchValue($hash);
+
+        /**
+         * @var Pair $pair
+         */
+        $pair = $this->storage[$hash];
+        return $pair->second;
     }
 
     /**
@@ -79,7 +84,8 @@ class HashMap implements Map {
      * @return void
      */
     function offsetSet($offset, $value) {
-        $this->insert($offset, $value);
+        $hash = call_user_func($this->hashFunction, $offset);
+        $this->storage[$hash] = new Pair($offset, $value);
     }
 
     /**
@@ -88,7 +94,10 @@ class HashMap implements Map {
      * @return void
      */
     function offsetUnset($offset) {
-        $this->remove($offset);
+        $hash = call_user_func($this->hashFunction, $offset);
+        if (array_key_exists($hash, $this->storage)) {
+            unset($this->storage[$hash]);
+        }
     }
 
     function areEqual($a, $b) {
@@ -132,7 +141,12 @@ class HashMap implements Map {
         if (!array_key_exists($hash, $this->storage)) {
             throw new KeyException;
         }
-        return $this->fetchValue($hash);
+
+        /**
+         * @var Pair $pair
+         */
+        $pair = $this->storage[$hash];
+        return $pair->second;
     }
 
     /**
@@ -143,7 +157,7 @@ class HashMap implements Map {
      * @throws TypeException when the $key or $value is not the correct type.
      */
     function insert($key, $value) {
-        $this->storage[call_user_func($this->hashFunction, $key)] = new Pair($key, $value);
+        $this->offsetSet($key, $value);
     }
 
     /**
@@ -153,10 +167,7 @@ class HashMap implements Map {
      * @throws TypeException when the $key is not the correct type.
      */
     function remove($key) {
-        $hash = call_user_func($this->hashFunction, $key);
-        if (array_key_exists($hash, $this->storage)) {
-            unset($this->storage[$hash]);
-        }
+        $this->offsetUnset($key);
     }
 
     /**
@@ -165,14 +176,6 @@ class HashMap implements Map {
      */
     function count() {
         return count($this->storage);
-    }
-
-    private function fetchValue($hash) {
-        /**
-         * @var Pair $pair
-         */
-        $pair = $this->storage[$hash];
-        return $pair->second;
     }
 
 }
