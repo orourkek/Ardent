@@ -65,7 +65,7 @@ class MappingIteratorTest extends \PHPUnit_Framework_TestCase {
     public function testWithAdditionalArgs() {
         $callable = $this->getMock('Ardent\\CallableMock', array('__invoke'));
 
-        $iterable = new MappingIterator($this->dataIterator, $callable, ['arg2', 'arg3']);
+        $iterable = new MappingIterator($this->dataIterator, $callable, array('arg2', 'arg3'));
 
         $callable->expects($this->exactly(count($this->data)))
             ->method('__invoke')

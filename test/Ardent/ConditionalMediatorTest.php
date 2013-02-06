@@ -19,7 +19,7 @@ class ConditionalMediatorTest extends \PHPUnit_Framework_TestCase {
         $mediator->addListener('do', 'strtolower');
         $mediator->addListener('do', 'base64_encode');
 
-        $expectedListeners = ['strtolower', 'base64_encode'];
+        $expectedListeners = array('strtolower', 'base64_encode');
         $actualListeners = $mediator->getListeners('do');
         $this->assertEquals($expectedListeners, $actualListeners);
     }
@@ -35,7 +35,7 @@ class ConditionalMediatorTest extends \PHPUnit_Framework_TestCase {
         $mediator->removeListener('do', 'str_rot13');
         $mediator->removeListener('do not', 'str_rot13');
 
-        $expectedListeners = ['base64_encode'];
+        $expectedListeners = array('base64_encode');
         $actualListeners = $mediator->getListeners('do');
         $this->assertEquals($expectedListeners, $actualListeners);
 
@@ -49,7 +49,7 @@ class ConditionalMediatorTest extends \PHPUnit_Framework_TestCase {
         $mediator->addListener('do', 'str_rot13');
         $mediator->removeListener('do', 'str_rot13');
 
-        $expect = [];
+        $expect = array();
         $actual = $mediator->getListeners('do');
 
         $this->assertEquals($expect, $actual);
@@ -64,7 +64,7 @@ class ConditionalMediatorTest extends \PHPUnit_Framework_TestCase {
 
         $mediator->removeEvent('do');
 
-        $expect = [];
+        $expect = array();
         $actual = $mediator->getListeners('do');
 
         $this->assertEquals($expect, $actual);
@@ -79,7 +79,7 @@ class ConditionalMediatorTest extends \PHPUnit_Framework_TestCase {
 
         $mediator->clear();
 
-        $expected = [];
+        $expected = array();
         $actual = $mediator->getEvents();
         $this->assertEquals($expected, $actual);
     }
