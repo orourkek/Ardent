@@ -4,15 +4,19 @@ namespace Ardent;
 
 class ConditionalMediator implements Mediator {
 
-    private $events = [];
+    private $events = array();
 
     /**
      * @param string $event
      * @param callable $callable
      *
+     * @throws TypeException
      * @return void
      */
-    function addListener($event, callable $callable) {
+    function addListener($event, $callable) {
+	if(!is_callable($callable)) {
+		throw new TypeException(sprintf("%s requires listener to be callable", __METHOD__));
+	}
         $this->events[$event][] = $callable;
     }
 
@@ -22,7 +26,7 @@ class ConditionalMediator implements Mediator {
      *
      * @return void
      */
-    function removeListener($event, callable $callable) {
+    function removeListener($event, $callable) {
         if (empty($this->events[$event])) {
             return;
         }
@@ -50,7 +54,7 @@ class ConditionalMediator implements Mediator {
      * @return void
      */
     function clear() {
-        $this->events = [];
+        $this->events = array();
     }
 
     /**
@@ -84,7 +88,7 @@ class ConditionalMediator implements Mediator {
         if ($eventExists && is_array($this->events[$event])) {
             return $this->events[$event];
         }
-        return [];
+        return array();
     }
 
     /**

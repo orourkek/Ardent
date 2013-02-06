@@ -24,11 +24,11 @@ class MappingIterator extends IteratorIterator {
      * @param array $args An array of arguments that will be passed to the callback. They will not be passed as an array
      *                    but the values of the array.
      */
-    public function __construct(Traversable $iterator, $callback, $varargs = NULL) {
+    public function __construct(Traversable $iterator, $callback, array $args = array()) {
         parent::__construct($iterator);
         $this->callback = $callback;
 
-        $this->args = array_merge([NULL, NULL], $args);
+        $this->args = array_merge(array(NULL, NULL), $args);
     }
 
     function current() {

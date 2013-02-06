@@ -85,7 +85,7 @@ class HashMap implements Map {
      */
     function offsetSet($offset, $value) {
         $hash = call_user_func($this->hashFunction, $offset);
-        $this->storage[$hash] = new Pair($offset, $value);
+	$this->storage[$hash] = new Pair($offset, $value);
     }
 
     /**
