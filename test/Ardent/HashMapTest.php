@@ -175,7 +175,10 @@ class HashMapTest extends \PHPUnit_Framework_TestCase {
         $object = new \StdClass;
         $map->insert($object, 1);
         $object->property = 'set';
-        $this->assertEquals(1, $map->get($object));   
+        $this->assertEquals(1, $map->get($object));
+
+        $copy = clone $object;
+        $this->assertFalse($map->contains($copy));
     }
 
     /**

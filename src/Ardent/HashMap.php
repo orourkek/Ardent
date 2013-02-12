@@ -101,7 +101,7 @@ class HashMap implements Map {
     }
 
     function areEqual($a, $b) {
-        return $a == $b;
+        return $a === $b;
     }
 
     /**
